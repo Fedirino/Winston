@@ -150,7 +150,7 @@
     .status { min-height: 20px; color: rgba(245,242,234,0.68); font-size: 12px; text-align: center; letter-spacing: 0.08em; text-transform: uppercase; }
     .transcript {
       min-height: 56px;
-      max-height: 80px;
+      max-height: 92px;
       overflow-y: auto;
       padding: 10px 14px;
       border-radius: 18px;
@@ -162,6 +162,7 @@
       font-size: 13px;
       line-height: 1.45;
     }
+    .transcript-wrap { margin-top: 2px; }
     .transcript .you  { color: rgba(245,242,234,0.52); font-size: 11px; margin-bottom: 4px; }
     .transcript .kyo  { color: rgba(255,226,197,0.95); }
     .ready {
@@ -262,11 +263,13 @@
         <div class="avatar" id="avatar" aria-hidden="true">
           <span class="spike"></span><span class="spike"></span><span class="spike"></span><span class="spike"></span><span class="spike"></span>
         </div>
+      </div>
+      <div class="status" id="status">READY TO START</div>
+      <section class="transcript-wrap">
         <section class="transcript" id="transcript">
           <div class="kyo">Kyo: How can I help you today?</div>
         </section>
-      </div>
-      <div class="status" id="status">READY TO START</div>
+      </section>
     </section>
 
     <section class="mic-shell">

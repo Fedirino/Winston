@@ -165,6 +165,39 @@
     .transcript-wrap { margin-top: 2px; }
     .transcript .you  { color: rgba(245,242,234,0.52); font-size: 11px; margin-bottom: 4px; }
     .transcript .kyo  { color: rgba(255,226,197,0.95); }
+    .composer {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.16);
+    }
+    .composer input {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 15px;
+      padding: 6px 4px;
+    }
+    .composer input::placeholder { color: rgba(245,242,234,0.42); }
+    .composer button {
+      flex: 0 0 auto;
+      border: 0;
+      border-radius: 14px;
+      padding: 10px 14px;
+      color: #fff;
+      background: linear-gradient(180deg, #ff9d36, #ff7f12);
+      font-weight: 700;
+      box-shadow: 0 8px 20px rgba(255,138,31,0.22);
+      cursor: pointer;
+    }
     .ready {
       text-align: center;
       color: rgba(245,242,234,0.74);
@@ -187,6 +220,7 @@
       font-size: 34px;
       cursor: pointer;
       transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+      position: relative;
     }
     .mic::after {
       content: '';
@@ -280,6 +314,10 @@
         <section class="transcript" id="transcript">
           <div class="kyo">Kyo: How can I help you today?</div>
         </section>
+        <form class="composer" id="composer">
+          <input id="chat-input" type="text" placeholder="Type to Kyo..." autocomplete="off" />
+          <button type="submit">Send</button>
+        </form>
       </section>
     </section>
 
@@ -364,6 +402,8 @@
       status: document.getElementById('status'),
       transcript: document.getElementById('transcript'),
       mic: document.getElementById('mic'),
+      chatInput: document.getElementById('chat-input'),
+      composer: document.getElementById('composer'),
       avatar: document.getElementById('avatar'),
       brand: document.getElementById('brand'),
       settingsBtn: document.getElementById('settings-btn'),
@@ -412,6 +452,13 @@
     function clearGreeting(){
       const parent = document.getElementById('transcript');
       parent.innerHTML = '';
+    }
+
+    function submitText(text) {
+      const value = (text || '').trim();
+      if (!value) return;
+      if (els.chatInput) els.chatInput.value = '';
+      handleUser(value);
     }
 
     function openSettings() {
@@ -619,6 +666,20 @@
 
     // ---------- events ----------
     els.mic.addEventListener('click', listen);
+    if (els.composer) {
+      els.composer.addEventListener('submit', (e) => {
+        e.preventDefault();
+        submitText(els.chatInput && els.chatInput.value);
+      });
+    }
+    if (els.chatInput) {
+      els.chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          submitText(els.chatInput.value);
+        }
+      });
+    }
     els.settingsBtn.addEventListener('click', openSettings);
     els.brand.addEventListener('click', openSettings);
     els.scrim.addEventListener('click', closeSettings);

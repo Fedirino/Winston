@@ -161,6 +161,27 @@
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     .toast .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber);
       box-shadow: 0 0 10px rgba(255,140,66,0.9); animation: pipblink 0.8s ease-in-out infinite; flex: 0 0 auto; }
+
+    /* ===== desktop / large-viewport scale-up ===== */
+    @media (min-width: 820px) and (min-height: 640px) {
+      body { overflow: auto; }
+      .app { max-width: 640px; padding-top: max(40px, env(safe-area-inset-top)); padding-bottom: max(32px, env(safe-area-inset-bottom)); gap: 10px; }
+      .brand { width: 128px; height: 54px; }
+      .brand span { font-size: 44px; line-height: 54px; }
+      .stage { height: 380px; }
+      .orbitline { width: 356px; height: 356px; }
+      canvas#core { width: 452px; height: 378px; }
+      .statusword { font-size: 17px; }
+      .feed { gap: 17px; padding: 18px 2px; }
+      .line-kyo { font-size: 21px; }
+      .line-you { font-size: 12.5px; }
+      .composer input { font-size: 18px; }
+      .mic { width: 132px; height: 132px; }
+      .mic-icon { width: 34px; height: 34px; }
+      .whisper { font-size: 10.5px; margin-top: 16px; }
+      .foot { font-size: 10.5px; }
+      .sheet { width: min(520px, 90vw); padding: 28px; }
+    }
   </style>
 </head>
 <body data-state="idle">
@@ -244,7 +265,7 @@
   </div>
 
   <script>
-    const APP_VERSION = '0.5.0';
+    const APP_VERSION = '0.5.1';
 
     // ---------- state ----------
     const state = {

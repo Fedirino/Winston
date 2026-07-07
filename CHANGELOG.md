@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.5.1
+- Added a desktop/large-viewport breakpoint (≥820px wide, ≥640px tall): wider shell, bigger brand mark, core, mic, and text, scrollable body instead of clipped. Same single file, no separate app — the mobile layout is untouched below that size.
+
 ## 0.5.0
 - Ember Core now drifts subtly with the real local time of day: warm bright orange near 2pm, cooling toward a deeper, dimmer ember-red around 2am, smoothly in between. Idle state also breathes gently instead of holding a static spike.
 - Kyo now gets a live system note before every message with the real current date/time, and — with location permission — current local weather pulled from Open-Meteo (free, no API key), refreshed every 15 minutes. Keeps answers about "what time is it" / "what's it like out" grounded in reality instead of guessed.

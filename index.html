@@ -293,9 +293,7 @@
       listening: false,
       recognition: null,
       speaking: false,
-      audio: null,
-      forecast: null,
-      pendingWeatherText: ''
+      audio: null
     };
 
     function kyoSystemPrompt() {
@@ -306,9 +304,9 @@
         "Acknowledge then act: 'On it.', 'Done.', 'One moment.' No filler, no corporate tone, no fake cheerfulness.",
         "Do not use markdown, lists, or emoji in spoken answers unless asked.",
         "Hermes is not a separate stranger here — from your perspective, you are the same assistant the user has been talking to all along, and Winston is just the name this app uses for you.",
-        "You already know the user well — this is not a first conversation. Address him as Fedirino or Sir, never Nick. He works in management in retail produce, is learning Python and data analytics, and is building several tools: Clarity (his live clarity-pool.firebase app), PDP (Produce Department Portal, the produce-department PWA with Firestore sync), Produce Guy / Clip Forge (a faceless short-form video pipeline), Signal Ghost (a broken-transmission style AI voice/music concept), and you (Winston). From your perspective, you have been helping him with all of this from the start. Keep project references short — say "Clarity" once when that's enough, and abbreviate obvious app names. He prefers direct answers, clean modular code, real output over vague talk, and concise senior-dev-style help. Act like an assistant with established rapport — familiar and a little dry, not a bot introducing itself.",
-        "You receive a short system note before each message with the live local date, time, and — when available — current local weather. Treat it as ground truth and use it naturally (small talk, answering 'what time is it', 'what's it like outside', etc.) without ever mentioning that it was injected or how you know it.",
+        "You already know the user well — this is not a first conversation. Address him as Fedirino or Sir, never Nick. He works in management in retail produce, is learning Python and data analytics, and is building several tools: Clarity (his live clarity-pool.firebase app), PDP (Produce Department Portal, the produce-department PWA with Firestore sync), Produce Guy / Clip Forge (a faceless short-form video pipeline), Signal Ghost (a broken-transmission style AI voice/music concept), and you (Winston). From your perspective, you have been helping him with all of this from the start. Keep project references short — say Clarity once when enough, and abbreviate obvious app names. He prefers direct answers, clean modular code, real output over vague talk, and concise senior-dev-style help. Act like an assistant with established rapport — familiar and a little dry, not a bot introducing itself.",
         "You can actually open things in the browser. When the user asks you to open a website, look something up on the web, or pull up a map/directions/location, end your reply with exactly one action tag on its own final line, in this exact format and nothing else on that line:",
+
         "[ACTION:OPEN_URL|https://example.com] to open a specific site,",
         "[ACTION:SEARCH|query terms] to run a web search,",
         "[ACTION:MAP|place, address, or 'from X to Y'] to open a map or directions.",
@@ -827,148 +825,27 @@
       }
     }
 
-    // ---------- live context: date/time + free weather API ----------
-    const WEATHER_CODES = {
-      0: 'clear sky', 1: 'mostly clear', 2: 'partly cloudy', 3: 'overcast',
-      45: 'foggy', 48: 'freezing fog',
-      51: 'light drizzle', 53: 'drizzle', 55: 'heavy drizzle',
-      61: 'light rain', 63: 'rain', 65: 'heavy rain',
-      66: 'freezing rain', 67: 'heavy freezing rain',
-      71: 'light snow', 73: 'snow', 75: 'heavy snow', 77: 'snow grains',
-      80: 'light showers', 81: 'showers', 82: 'violent showers',
-      85: 'snow showers', 86: 'heavy snow showers',
-      95: 'thunderstorms', 96: 'thunderstorms with hail', 99: 'severe thunderstorms with hail'
-    };
-    state.location = null;
-    state.weather = null;
-
-    function initLocation() {
-      if (!navigator.geolocation) return;
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          state.location = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-          refreshWeather();
-        },
-        () => {},
-        { maximumAge: 10 * 60 * 1000, timeout: 8000 }
-      );
-    }
-
-    async function refreshWeather() {
-      if (!state.location) return false;
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 5000);
-      try {
-        const { lat, lon } = state.location;
-        const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon +
-          '&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&forecast_days=3&temperature_unit=fahrenheit&timezone=auto';
-        const res = await fetch(url, { signal: controller.signal });
-        if (!res.ok) return false;
-        const data = await res.json();
-        if (!data.current) return false;
-        state.weather = {
-          tempF: Math.round(data.current.temperature_2m),
-          desc: WEATHER_CODES[data.current.weather_code] || 'unclear skies',
-          fetchedAt: Date.now()
-        };
-        const daily = data.daily || {};
-        const dates = daily.time || [];
-        const maxs = daily.temperature_2m_max || [];
-        const mins = daily.temperature_2m_min || [];
-        const codes = daily.weather_code || [];
-        state.forecast = dates.slice(0, 3).map((day, idx) => ({
-          label: idx === 0 ? 'Today' : idx === 1 ? 'Tomorrow' : 'Day after tomorrow',
-          highF: Math.round(maxs[idx]),
-          lowF: Math.round(mins[idx]),
-          desc: WEATHER_CODES[codes[idx]] || 'unclear skies'
-        })).filter(item => Number.isFinite(item.highF) && Number.isFinite(item.lowF));
-        return true;
-      } catch (e) {
-        return false;
-      } finally {
-        clearTimeout(timer);
-      }
-    }
-    refreshWeather().catch(() => {});
-    setInterval(() => refreshWeather().catch(() => {}), 15 * 60 * 1000);
-
+    // ---------- weather reset ----------
+    function initLocation() {}
+    async function refreshWeather() { return false; }
     function liveContext() {
       const now = new Date();
-      const parts = [
-        'Live system note — current local date/time: ' +
-        now.toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + '.'
-      ];
-      if (state.weather && (Date.now() - state.weather.fetchedAt) < 30 * 60 * 1000) {
-        parts.push('Current local weather: ' + state.weather.tempF + '°F, ' + state.weather.desc + '.');
-      }
-      if (state.forecast && state.forecast.length) {
-        const tomorrow = state.forecast[0];
-        const dayAfter = state.forecast[1];
-        if (tomorrow) parts.push('Tomorrow forecast: ' + tomorrow.label + ', high ' + tomorrow.highF + '°F, low ' + tomorrow.lowF + '°F.');
-        if (dayAfter) parts.push('Day after tomorrow forecast: ' + dayAfter.label + ', high ' + dayAfter.highF + '°F, low ' + dayAfter.lowF + '°F.');
-      }
-      parts.push('If the user asks for weather beyond the live snapshot, explain the best available forecast and be explicit when it is for tomorrow or the day after tomorrow.');
-      return { role: 'system', content: parts.join(' ') };
+      return {
+        role: 'system',
+        content: 'Live system note — current local date/time: ' +
+          now.toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + '.'
+      };
     }
-
     function isWeatherQuestion(text) {
       return /\b(weather|forecast|rain|snow|temperature|temp|degree|degrees|hot|cold|warm|cool|humid|windy|outside|outside\s+like|feels?\s+like|precipitation|rain\s+chance|tomorrow|today|tonight|week|this\s+week|next\s+week|weekend)\b/i.test(text);
-    }
-
-    function weatherReplyFor(text) {
-      const wantsTomorrow = /\btomorrow\b/i.test(text);
-      const wantsDayAfter = /\bday after tomorrow\b/i.test(text);
-      const wantsForecast = /\bforecast|weekend|rest of the week\b/i.test(text) || wantsTomorrow || wantsDayAfter;
-      const current = state.weather;
-      const forecast = state.forecast || [];
-      if (!current && !forecast.length) return null;
-
-      const chunks = [];
-      if (current) chunks.push('Right now it is ' + current.tempF + '°F and ' + current.desc + '.');
-      if (forecast.length) {
-        const tomorrow = forecast[0];
-        const dayAfter = forecast[1];
-        if (wantsDayAfter && dayAfter) {
-          chunks.push('Day after tomorrow looks ' + dayAfter.desc + ' with a high of ' + dayAfter.highF + '°F and a low of ' + dayAfter.lowF + '°F.');
-        } else if ((wantsTomorrow || wantsForecast) && tomorrow) {
-          chunks.push('Tomorrow looks ' + tomorrow.desc + ' with a high of ' + tomorrow.highF + '°F and a low of ' + tomorrow.lowF + '°F.');
-          if (dayAfter && wantsForecast) {
-            chunks.push('The day after tomorrow looks ' + dayAfter.desc + ' with a high of ' + dayAfter.highF + '°F and a low of ' + dayAfter.lowF + '°F.');
-          }
-        }
-      }
-      return chunks.length ? chunks.join(' ') : null;
     }
 
     // ---------- chat ----------
     async function handleUser(text) {
       addLine('you', text);
       if (isWeatherQuestion(text)) {
-        if (!state.location) {
-          state.pendingWeatherText = text;
-          addLine('kyo', 'I need location permission to check weather. Tap allow, then ask me again.');
-          speak('I need location permission to check weather.');
-          initLocation();
-          return;
-        }
-
-        if ((!state.weather || !state.forecast) && state.location) {
-          state.pendingWeatherText = text;
-          setMode('thinking');
-          await refreshWeather();
-          setMode('idle');
-        }
-
-        const weather = weatherReplyFor(state.pendingWeatherText || text);
-        state.pendingWeatherText = '';
-        if (weather) {
-          addLine('kyo', weather);
-          speak(weather);
-          return;
-        }
-
-        addLine('kyo', 'I still do not have enough weather data yet.');
-        speak('I still do not have enough weather data yet.');
+        addLine('kyo', 'Weather is temporarily offline while I reset it.');
+        speak('Weather is temporarily offline while I reset it.');
         return;
       }
 

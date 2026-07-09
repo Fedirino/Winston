@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.4
+- Reverted the experimental mode chips and mode-routing UI; Winston is back to a fast plain chat shell.
+- Kept the continuous mic conversation flow so the mic can reopen after replies for cleaner back-and-forth.
+- Bumped shell/version markers so installed PWAs pick up the rollback cleanly.
+
 ## 0.7.3
 - Phase 3 slice: added context mode chips (General, Voice, Weather, Travel, Brain), mode-aware status/help, typed/spoken mode routing, and a clickable modebar.
 - Bumped version/cache markers so installed PWAs pick up the new shell on launch.

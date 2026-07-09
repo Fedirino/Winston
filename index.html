@@ -85,32 +85,6 @@
 
     .statusword { text-align: center; font-size: 14px; font-weight: 300; color: var(--dim); letter-spacing: 0.04em; }
     .statusword b { color: var(--ink); font-weight: 500; }
-    .modebar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: center;
-      margin: 6px 0 2px;
-      flex: 0 0 auto;
-    }
-    .modechip {
-      border: 1px solid rgba(245,239,233,0.12);
-      background: rgba(255,255,255,0.02);
-      color: var(--dim);
-      border-radius: 999px;
-      padding: 7px 11px;
-      font-size: 11px;
-      line-height: 1;
-      cursor: pointer;
-      transition: 0.18s;
-    }
-    .modechip:hover { color: var(--ink); border-color: rgba(255,140,66,0.34); }
-    .modechip.is-active {
-      color: #201208;
-      background: linear-gradient(96deg, var(--amber-hot), var(--amber) 55%, var(--amber-deep));
-      border-color: transparent;
-      box-shadow: 0 0 0 1px rgba(255,140,66,0.22), 0 0 22px rgba(255,140,66,0.14);
-    }
 
     /* ===== conversation: floating lines ===== */
     .feed { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
@@ -269,13 +243,6 @@
       <canvas id="core" width="632" height="528" aria-hidden="true"></canvas>
     </section>
     <div class="statusword" id="status" role="status"><b>Winston</b> is here</div>
-    <div class="modebar" id="modebar" aria-label="Context modes">
-      <button class="modechip" data-mode="general" type="button">General</button>
-      <button class="modechip" data-mode="voice" type="button">Voice</button>
-      <button class="modechip" data-mode="weather" type="button">Weather</button>
-      <button class="modechip" data-mode="travel" type="button">Travel</button>
-      <button class="modechip" data-mode="brain" type="button">Brain</button>
-    </div>
 
     <section class="feed" id="transcript" aria-live="polite"></section>
 
@@ -297,7 +264,7 @@
     <div class="whisper" id="whisper">tap to speak</div>
 
     <div class="foot">
-      <span id="ver-tag">Winston v0.7.3</span>
+      <span id="ver-tag">Winston v0.7.4</span>
       <span id="model-tag"></span>
     </div>
   </main>
@@ -353,7 +320,7 @@
   </div>
 
   <script>
-    const APP_VERSION = '0.7.3';
+    const APP_VERSION = '0.7.4';
 
     // ---------- state ----------
     const state = {
@@ -374,8 +341,7 @@
       audio: null,
       weather: null,
       forecast: [],
-      travel: null,
-      uiMode: 'general'
+      travel: null
     };
 
     const DEFAULT_HOME = { lat: 41.5376, lon: -72.8070 };
@@ -451,7 +417,6 @@
       travelTitle: document.getElementById('travel-title'),
       travelSub: document.getElementById('travel-sub'),
       travelChiprow: document.getElementById('travel-chiprow'),
-      modebar: document.getElementById('modebar'),
       handsFree: document.getElementById('handsfree'),
       continuous: document.getElementById('continuous')
     };
@@ -469,48 +434,12 @@
       thinking: 'one moment',
       speaking: 'one moment'
     };
-    const MODE_HELP = {
-      general: 'General mode — normal conversation and commands.',
-      voice: 'Voice mode — optimize for mic flow and fast replies.',
-      weather: 'Weather mode — ask about today, tomorrow, or the week.',
-      travel: 'Travel mode — ask me to fly somewhere or open maps.',
-      brain: 'Brain mode — planning, architecture, and deeper reasoning.'
-    };
-
-    function renderModebar() {
-      const chips = els.modebar ? Array.from(els.modebar.querySelectorAll('[data-mode]')) : [];
-      chips.forEach((chip) => chip.classList.toggle('is-active', chip.dataset.mode === state.uiMode));
-    }
-
-    function setUIMode(mode) {
-      state.uiMode = mode;
-      renderModebar();
-      if (els.status) els.status.title = MODE_HELP[mode] || '';
-      if (mode === 'weather') {
-        els.status.innerHTML = '<b>Winston</b> is in weather mode';
-        els.whisper.textContent = state.weather ? 'ask about today, tomorrow, or this week' : 'tap to ask about weather';
-      } else if (mode === 'travel') {
-        els.status.innerHTML = '<b>Winston</b> is in travel mode';
-        els.whisper.textContent = 'say a place and I will fly there';
-      } else if (mode === 'brain') {
-        els.status.innerHTML = '<b>Winston</b> is in brain mode';
-        els.whisper.textContent = 'planning and deeper reasoning';
-      } else if (mode === 'voice') {
-        els.status.innerHTML = '<b>Winston</b> is in voice mode';
-        els.whisper.textContent = 'mic flow and fast replies';
-      } else {
-        els.status.innerHTML = LABEL[state.mode] || LABEL.idle;
-        els.whisper.textContent = (state.mode === 'idle' && state.handsFree) ? 'say "hey winston" — or tap' : WHISP[state.mode];
-      }
-    }
-
     function setMode(mode, label) {
       state.mode = mode;
       document.body.dataset.state = mode;
       els.status.innerHTML = label ? label : LABEL[mode];
       els.whisper.textContent = (mode === 'idle' && state.handsFree) ? 'say "hey winston" — or tap' : WHISP[mode];
       if (mode === 'idle') startAmbient(); else stopAmbient();
-      renderModebar();
     }
 
     function addLine(role, text) {
@@ -1269,7 +1198,6 @@
     // ---------- chat ----------
     async function handleUser(text) {
       addLine('you', text);
-      setUIMode(resolveModeFromText(text));
       const travelTarget = resolveTravelTarget(text);
       if (travelTarget) {
         const phrase = 'Flying to ' + travelTarget.name + '.';
@@ -1360,13 +1288,6 @@
     els.scrim.addEventListener('click', closeSettings);
     els.cancelBtn.addEventListener('click', closeSettings);
     els.saveBtn.addEventListener('click', saveSettings);
-    if (els.modebar) {
-      els.modebar.addEventListener('click', (e) => {
-        const chip = e.target.closest('[data-mode]');
-        if (!chip) return;
-        setUIMode(chip.dataset.mode || 'general');
-      });
-    }
 
     // ---------- boot ----------
     function timeGreeting() {

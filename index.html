@@ -351,7 +351,7 @@
     <div class="whisper" id="whisper">tap to speak</div>
 
     <div class="foot">
-      <span id="ver-tag">Winston v0.7.4</span>
+      <span id="ver-tag">Winston v0.8.2</span>
       <span id="model-tag"></span>
     </div>
   </main>
@@ -468,7 +468,8 @@
     } from './src/features/capture/capture.js';
     import { createWinstonCloud } from './src/services/cloud.js';
 
-    const APP_VERSION = '0.8.1';
+    const APP_VERSION = '0.8.2';
+    const DEFAULT_ELEVEN_VOICE_ID = 'goT3UYdM9bhm0n2lmKQx';
 
     // ---------- state ----------
     const state = {
@@ -476,7 +477,7 @@
       model: localStorage.getItem('kyo.model') || 'xiaomi/mimo-v2.5',
       voiceName: localStorage.getItem('kyo.voice') || '',
       elevenKey: localStorage.getItem('kyo.elevenKey') || '',
-      elevenVoice: localStorage.getItem('kyo.elevenVoice') || '',
+      elevenVoice: localStorage.getItem('kyo.elevenVoice') || DEFAULT_ELEVEN_VOICE_ID,
       handsFree: localStorage.getItem('kyo.handsFree') === '1',
       continuous: localStorage.getItem('kyo.continuous') === '1',
       mode: 'idle',
@@ -1024,7 +1025,7 @@
       state.apiKey = els.apiKey.value.trim();
       state.model = els.model.value;
       state.elevenKey = els.elevenKey.value.trim();
-      state.elevenVoice = els.elevenVoice.value.trim();
+      state.elevenVoice = els.elevenVoice.value.trim() || DEFAULT_ELEVEN_VOICE_ID;
       state.voiceName = els.voiceSel.value;
       const handsFreeWasOn = state.handsFree;
       const continuousWasOn = state.continuous;

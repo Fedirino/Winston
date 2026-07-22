@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.8.2
+- Added `goT3UYdM9bhm0n2lmKQx` as Winston's built-in ElevenLabs voice while retaining the Settings override.
+
 ## 0.8.1
 - Added an authenticated Firebase Functions proxy for OpenRouter chat and ElevenLabs speech, keeping provider keys out of the browser.
 - Added Google sign-in with an exact allowed-email check, origin validation, request limits, model allowlisting, and bounded payloads.

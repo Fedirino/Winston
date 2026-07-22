@@ -43,6 +43,10 @@ jobs:
           printf '%s' "$ELEVENLABS_API_KEY" | npx firebase-tools@latest functions:secrets:set ELEVENLABS_API_KEY --data-file=- --project kyo-os --non-interactive
           printf '%s' "$WINSTON_ALLOWED_EMAIL" | npx firebase-tools@latest functions:secrets:set WINSTON_ALLOWED_EMAIL --data-file=- --project kyo-os --non-interactive
           echo "configured=true" >> "$GITHUB_OUTPUT"
+      - name: Install Firebase Functions dependencies
+        if: steps.runtime.outputs.configured == 'true'
+        shell: bash
+        run: npm ci --prefix functions --omit=dev --ignore-scripts
       - name: Deploy to Firebase
         shell: bash
         env:

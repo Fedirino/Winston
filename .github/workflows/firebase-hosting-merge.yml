@@ -24,11 +24,13 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          HERMES_API_KEY: ${{ secrets.HERMES_API_KEY }}
+          HERMES_API_URL: ${{ secrets.HERMES_API_URL }}
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           WINSTON_ALLOWED_EMAIL: ${{ secrets.WINSTON_ALLOWED_EMAIL }}
         run: |
           set -euo pipefail
-          if [ -z "$OPENROUTER_API_KEY" ] || [ -z "$ELEVENLABS_API_KEY" ] || [ -z "$WINSTON_ALLOWED_EMAIL" ]; then
+          if [ -z "$HERMES_API_KEY" ] || [ -z "$HERMES_API_URL" ] || [ -z "$ELEVENLABS_API_KEY" ] || [ -z "$WINSTON_ALLOWED_EMAIL" ]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
             echo "::warning::Secure runtime secrets are incomplete; deploying Hosting only."
             exit 0
@@ -40,6 +42,8 @@ jobs:
           fi
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json"
           printf '%s' "$OPENROUTER_API_KEY" | npx firebase-tools@latest functions:secrets:set OPENROUTER_API_KEY --data-file=- --project kyo-os --non-interactive
+          printf '%s' "$HERMES_API_KEY" | npx firebase-tools@latest functions:secrets:set HERMES_API_KEY --data-file=- --project kyo-os --non-interactive
+          printf '%s' "$HERMES_API_URL" | npx firebase-tools@latest functions:secrets:set HERMES_API_URL --data-file=- --project kyo-os --non-interactive
           printf '%s' "$ELEVENLABS_API_KEY" | npx firebase-tools@latest functions:secrets:set ELEVENLABS_API_KEY --data-file=- --project kyo-os --non-interactive
           printf '%s' "$WINSTON_ALLOWED_EMAIL" | npx firebase-tools@latest functions:secrets:set WINSTON_ALLOWED_EMAIL --data-file=- --project kyo-os --non-interactive
           echo "configured=true" >> "$GITHUB_OUTPUT"

@@ -6,6 +6,8 @@ const { getAuth } = require('firebase-admin/auth');
 initializeApp();
 
 const openRouterKey = defineSecret('OPENROUTER_API_KEY');
+const hermesApiKey = defineSecret('HERMES_API_KEY');
+const hermesApiUrl = defineSecret('HERMES_API_URL');
 const elevenLabsKey = defineSecret('ELEVENLABS_API_KEY');
 const allowedEmail = defineSecret('WINSTON_ALLOWED_EMAIL');
 
@@ -67,29 +69,31 @@ function cleanMessages(messages) {
 
 async function handleChat(req, res) {
   const messages = cleanMessages(req.body && req.body.messages);
-  const requestedModel = String((req.body && req.body.model) || '');
-  const model = ALLOWED_MODELS.has(requestedModel) ? requestedModel : 'xiaomi/mimo-v2.5';
   if (!messages) return json(res, 400, { error: 'Invalid messages.' });
 
-  const upstream = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+  const hermesUrl = (hermesApiUrl.value() || '').replace(/\/+$/, '');
+  const hermesKey = hermesApiKey.value();
+  if (!hermesUrl || !hermesKey) {
+    return json(res, 503, { error: 'Hermes relay is not configured.' });
+  }
+
+  const upstream = await fetch(hermesUrl + '/v1/chat/completions', {
     method: 'POST',
     headers: {
-      Authorization: 'Bearer ' + openRouterKey.value(),
-      'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://kyo-os.web.app',
-      'X-Title': 'Winston'
+      Authorization: 'Bearer ' + hermesKey,
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model,
+      model: 'hermes-agent',
       messages,
-      max_tokens: Math.min(500, Math.max(80, Number(req.body.max_tokens) || 220)),
+      max_tokens: Math.min(1000, Math.max(80, Number(req.body.max_tokens) || 220)),
       temperature: Math.min(1, Math.max(0, Number(req.body.temperature) || 0.6))
     })
   });
   if (!upstream.ok) {
     const detail = (await upstream.text().catch(() => '')).slice(0, 180);
-    console.error('OpenRouter error', upstream.status, detail);
-    return json(res, 502, { error: 'The chat provider is unavailable.' });
+    console.error('Hermes relay error', upstream.status, detail);
+    return json(res, 502, { error: 'The Hermes relay is unavailable.' });
   }
   const data = await upstream.json();
   const reply = data && data.choices && data.choices[0] && data.choices[0].message
@@ -129,10 +133,10 @@ async function handleSpeech(req, res) {
 
 exports.api = onRequest({
   region: 'us-central1',
-  timeoutSeconds: 60,
+  timeoutSeconds: 120,
   memory: '256MiB',
   maxInstances: 3,
-  secrets: [openRouterKey, elevenLabsKey, allowedEmail]
+  secrets: [openRouterKey, hermesApiKey, hermesApiUrl, elevenLabsKey, allowedEmail]
 }, async (req, res) => {
   const origin = req.get('origin');
   res.set('Vary', 'Origin');

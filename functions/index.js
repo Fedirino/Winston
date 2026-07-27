@@ -96,9 +96,38 @@ async function handleChat(req, res) {
     return json(res, 502, { error: 'The Hermes relay is unavailable.' });
   }
   const data = await upstream.json();
-  const reply = data && data.choices && data.choices[0] && data.choices[0].message
+  let reply = data && data.choices && data.choices[0] && data.choices[0].message
     ? String(data.choices[0].message.content || '').trim() : '';
+
+  // Trim to keep only the spoken-worthy part — strip intermediate steps, keep the headline
+  if (reply && reply.length > 120) {
+    reply = compressVoiceReply(reply);
+  }
+
   return json(res, 200, { reply: reply || '…' });
+}
+
+function compressVoiceReply(text) {
+  // Strip markdown code blocks (full tool output, JSON, etc.)
+  text = text.replace(/```[\s\S]*?```/g, '').trim();
+  // Strip inline code snippets
+  text = text.replace(/`[^`]+`/g, '').trim();
+  // Strip action tags like [ACTION:OPEN_URL|...]
+  text = text.replace(/\[ACTION:[^\]]+\]/g, '').trim();
+
+  // Split into sentences (handles . ! ? and common abbreviations)
+  const sentences = text.match(/[^.!?\n]+[.!?]+(\s|$)/g) || [text];
+  const clean = sentences.map(s => s.trim()).filter(Boolean);
+
+  if (clean.length <= 2) return clean.join(' ');
+
+  // Take first 2 sentences. If the first is very short (acknowledgement), include the third.
+  let keep = clean.slice(0, 2);
+  if (clean[0].length < 30 && clean.length >= 3) {
+    keep = clean.slice(0, 3);
+  }
+
+  return keep.join(' ').trim();
 }
 
 async function handleSpeech(req, res) {

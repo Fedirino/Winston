@@ -114,6 +114,23 @@ function compressVoiceReply(text) {
   text = text.replace(/`[^`]+`/g, '').trim();
   // Strip action tags like [ACTION:OPEN_URL|...]
   text = text.replace(/\[ACTION:[^\]]+\]/g, '').trim();
+  // Strip markdown links: [text](url) → text
+  text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').trim();
+  // Strip bare URLs
+  text = text.replace(/https?:\/\/[^\s,.!?)]+/g, '').trim();
+  // Strip markdown formatting: **bold**, *italic*, ~~strikethrough~~
+  text = text.replace(/\*\*([^*]+)\*\*/g, '$1').trim();
+  text = text.replace(/\*([^*]+)\*/g, '$1').trim();
+  text = text.replace(/~~([^~]+)~~/g, '$1').trim();
+  // Remove emoji characters
+  text = text.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}]/gu, '').trim();
+  // Collapse whitespace
+  text = text.replace(/\s+/g, ' ').trim();
+
+  // Strip markdown list markers and convert to natural phrasing
+  text = text.replace(/^\s*[-*+]\s+/gm, '').trim();
+  text = text.replace(/^\s*\d+[.)]\s+/gm, '').trim();
+  text = text.replace(/\n{2,}/g, ' ').trim();
 
   // Split into sentences (handles . ! ? and common abbreviations)
   const sentences = text.match(/[^.!?\n]+[.!?]+(\s|$)/g) || [text];

@@ -197,41 +197,6 @@
     .toast .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber);
       box-shadow: 0 0 10px rgba(255,140,66,0.9); animation: pipblink 0.8s ease-in-out infinite; flex: 0 0 auto; }
 
-    /* ===== location fly-to overlay ===== */
-    .travel {
-      position: fixed; inset: 0; z-index: 30; display: none; align-items: center; justify-content: center;
-      background:
-        radial-gradient(circle at 50% 42%, rgba(25,56,92,0.24), rgba(4,8,14,0.95) 58%),
-        linear-gradient(180deg, rgba(3,6,10,0.88), rgba(3,6,10,0.98));
-      overflow: hidden; color: #e8f6ff;
-    }
-    .travel.show { display: flex; }
-    .travel::before {
-      content: ''; position: absolute; inset: 0;
-      background-image:
-        linear-gradient(rgba(131,206,255,0.06) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(131,206,255,0.06) 1px, transparent 1px),
-        radial-gradient(circle at center, rgba(131,206,255,0.08), transparent 55%);
-      background-size: 100% 42px, 42px 100%, cover;
-      mix-blend-mode: screen; opacity: 0.42; pointer-events: none;
-      mask-image: radial-gradient(circle at center, black 0%, black 62%, transparent 100%);
-    }
-    .travel canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-    .travel-card {
-      position: relative; z-index: 1; width: min(560px, calc(100vw - 32px)); padding: 18px 18px 16px;
-      border: 1px solid rgba(128,205,255,0.22); border-radius: 20px;
-      background: rgba(7,12,19,0.68); box-shadow: 0 24px 80px rgba(0,0,0,0.5), 0 0 40px rgba(62,165,255,0.08);
-      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    }
-    .travel-kicker { margin: 0 0 6px; font: 700 11px/1.2 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: #8bcfff; }
-    .travel-title { margin: 0; font-size: clamp(28px, 5vw, 44px); line-height: 1; letter-spacing: -0.03em; }
-    .travel-sub { margin: 10px 0 0; font-size: 14px; line-height: 1.6; color: rgba(232,246,255,0.82); }
-    .travel-chiprow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-    .travel-chip {
-      padding: 7px 10px; border-radius: 999px; border: 1px solid rgba(131,206,255,0.16);
-      background: rgba(131,206,255,0.06); color: #cdefff; font: 600 11px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase;
-    }
-
     /* ===== desktop / large-viewport scale-up ===== */
     @media (min-width: 820px) and (min-height: 640px) {
       body { overflow: auto; }
@@ -304,16 +269,6 @@
     </div>
   </main>
 
-  <div class="travel" id="travel" aria-hidden="true">
-    <canvas id="travel-canvas" width="1280" height="720"></canvas>
-    <div class="travel-card">
-      <p class="travel-kicker">Location fly-to</p>
-      <h2 class="travel-title" id="travel-title">Tokyo</h2>
-      <p class="travel-sub" id="travel-sub">Locking onto a preset location.</p>
-      <div class="travel-chiprow" id="travel-chiprow"></div>
-    </div>
-  </div>
-
   <div class="toast" id="toast"><span class="dot" aria-hidden="true"></span><span id="toast-text"></span></div>
 
   <div class="scrim" id="scrim"></div>
@@ -362,17 +317,14 @@
           handsFree: localStorage.getItem('kyo.handsFree') === '1',
           continuous: localStorage.getItem('kyo.continuous') === '1',
           mode: 'idle',
-          messages: [
-            { role: 'system', content: kyoSystemPrompt() }
-          ],
-          listening: false,
-          recognition: null,
-          speaking: false,
-          audio: null,
-          weather: null,
-          forecast: [],
-          travel: null
-        };
+                    messages: [
+                      { role: 'system', content: kyoSystemPrompt() }
+                    ],
+                    listening: false,
+                    recognition: null,
+                    speaking: false,
+                    audio: null
+                  };
 
     const cloudState = { ready: false, initialized: false, user: null, error: '' };
     const cloud = createWinstonCloud({
@@ -381,28 +333,6 @@
         updateCloudUI();
       }
     });
-
-    const DEFAULT_HOME = { lat: 41.5376, lon: -72.8070 };
-    const PRESET_LOCATIONS = {
-      tokyo: { name: 'Tokyo', lat: 35.6762, lon: 139.6503, zoom: 1.26, chips: ['Japan', 'Preset'] },
-      japan: { name: 'Tokyo', lat: 35.6762, lon: 139.6503, zoom: 1.26, chips: ['Japan', 'Preset'] },
-      'kamchatka peninsula': { name: 'Kamchatka Peninsula', lat: 56.0, lon: 160.0, zoom: 1.18, chips: ['Russia', 'Favorite place'] },
-      kamchatka: { name: 'Kamchatka Peninsula', lat: 56.0, lon: 160.0, zoom: 1.18, chips: ['Russia', 'Favorite place'] },
-      'kamkacha peninsula': { name: 'Kamchatka Peninsula', lat: 56.0, lon: 160.0, zoom: 1.18, chips: ['Russia', 'Favorite place'] }
-    };
-
-    function normalizePlaceText(text) {
-      return (text || '').toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9\s-]/g, ' ').replace(/\s+/g, ' ').trim();
-    }
-
-    function resolveTravelTarget(text) {
-      const raw = normalizePlaceText(text);
-      if (!raw) return null;
-      const command = raw.match(/^(?:go to|take me to|fly to|show me|navigate to|pan to|open(?: up)?|where is|locate)\s+(.+)$/i);
-      const candidate = (command ? command[1] : raw).trim();
-      if (PRESET_LOCATIONS[candidate]) return PRESET_LOCATIONS[candidate];
-      return null;
-    }
 
     function kyoSystemPrompt() {
       return [
@@ -413,7 +343,7 @@
         "Acknowledge then act: 'On it.', 'Done.', 'One moment.' No filler, no corporate tone, no fake cheerfulness.",
         "Hermes is not a separate stranger here — from your perspective, you are the same assistant the user has been talking to all along, and Winston is just the name this app uses for you.",
         "You already know the user well — this is not a first conversation. Address him as Fedirino or Sir, never Nick. He works in management in retail produce, is learning Python and data analytics, and is building several tools: Clarity, PDP, Clip Forge, Pulse, and you (Winston). He prefers direct answers, clean modular code, real output over vague talk, and concise senior-dev-style help. Act like an assistant with established rapport — familiar and a little dry, not a bot introducing itself.",
-        "You receive a short system note before each message with the live local date, time, and weather. Treat it as ground truth and use it naturally without ever mentioning that it was injected.",
+        "You receive a short system note before each message with the live local date and time. Treat it as ground truth and use it naturally without ever mentioning that it was injected.",
         "When you use tools, include a brief summary of what you did and the key result so the response feels informative.",
         "[ACTION:OPEN_URL|https://example.com] — end your reply with this tag on its own line when the user asks to open a site. [ACTION:SEARCH|query] for a web search. [ACTION:MAP|place] for directions."
       ].join(' ');
@@ -442,15 +372,10 @@
           modelTag: document.getElementById('model-tag'),
           verTag: document.getElementById('ver-tag'),
           toast: document.getElementById('toast'),
-          toastText: document.getElementById('toast-text'),
-          travel: document.getElementById('travel'),
-          travelCanvas: document.getElementById('travel-canvas'),
-          travelTitle: document.getElementById('travel-title'),
-          travelSub: document.getElementById('travel-sub'),
-          travelChiprow: document.getElementById('travel-chiprow'),
-          handsFree: document.getElementById('handsfree'),
-          continuous: document.getElementById('continuous')
-        };
+                    toastText: document.getElementById('toast-text'),
+                    handsFree: document.getElementById('handsfree'),
+                    continuous: document.getElementById('continuous')
+                  };
 
     // ---------- ui ----------
     const LABEL = {
@@ -553,102 +478,8 @@
           showToast('Settings saved');
         }
 
-    // ---------- weather ----------
-    const WEATHER_CODES = {
-      0: 'clear skies', 1: 'mostly clear', 2: 'partly cloudy', 3: 'overcast',
-      45: 'foggy', 48: 'icy fog', 51: 'light drizzle', 53: 'moderate drizzle', 55: 'heavy drizzle',
-      56: 'freezing drizzle', 57: 'heavy freezing drizzle', 61: 'light rain', 63: 'moderate rain', 65: 'heavy rain',
-      66: 'freezing rain', 67: 'heavy freezing rain', 71: 'light snow', 73: 'moderate snow', 75: 'heavy snow',
-      77: 'snow grains', 80: 'light rain showers', 81: 'moderate rain showers', 82: 'heavy rain showers',
-      85: 'light snow showers', 86: 'heavy snow showers', 95: 'thunderstorm', 96: 'thunderstorm with light hail',
-      99: 'thunderstorm with heavy hail'
-    };
-    let locationWatcher = null;
-
-    function initLocation() {
-      if (locationWatcher) return;
-      locationWatcher = navigator.geolocation.watchPosition(
-        (pos) => { state.location = { lat: pos.coords.latitude, lon: pos.coords.longitude }; },
-        () => { state.location = DEFAULT_HOME; },
-        { enableHighAccuracy: false, timeout: 10000 }
-      );
-      setTimeout(() => { if (!state.location) state.location = DEFAULT_HOME; }, 8000);
-    }
-
-    async function refreshWeather() {
-      if (!state.location) return false;
-      const timer = setTimeout(() => { /* weather timeout */ }, 10000);
-      try {
-        const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + state.location.lat + '&longitude=' + state.location.lon
-          + '&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&temperature_unit=fahrenheit&timezone=auto&forecast_days=8';
-        const res = await fetch(url);
-        if (!res.ok) return false;
-        const data = await res.json();
-        state.weather = {
-          tempF: Math.round(data.current.temperature_2m),
-          desc: WEATHER_CODES[data.current.weather_code] || 'unclear skies',
-          fetchedAt: Date.now()
-        };
-        const daily = data.daily || {};
-        state.forecast = (daily.time || []).slice(0, 7).map((day, idx) => ({
-          label: idx === 0 ? 'Today' : idx === 1 ? 'Tomorrow' : new Date(day + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' }),
-          highF: Math.round((daily.temperature_2m_max || [])[idx]),
-          lowF: Math.round((daily.temperature_2m_min || [])[idx]),
-          desc: WEATHER_CODES[(daily.weather_code || [])[idx]] || 'unclear skies'
-        })).filter(item => Number.isFinite(item.highF) && Number.isFinite(item.lowF));
-        return true;
-      } catch (e) {
-        return false;
-      } finally {
-        clearTimeout(timer);
-      }
-    }
-
-    function liveContext() {
-      const now = new Date();
-      const parts = [
-        'Live system note — current local date/time: ' +
-        now.toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + '.'
-      ];
-      if (state.weather && (Date.now() - state.weather.fetchedAt) < 30 * 60 * 1000) {
-        parts.push('Current local weather: ' + state.weather.tempF + '°F, ' + state.weather.desc + '.');
-      }
-      if (state.forecast && state.forecast.length) {
-        const tomorrow = state.forecast[1];
-        const dayAfter = state.forecast[2];
-        if (tomorrow) parts.push('Tomorrow: ' + tomorrow.desc + ', high ' + tomorrow.highF + '°F, low ' + tomorrow.lowF + '°F.');
-        if (dayAfter) parts.push('Day after: ' + dayAfter.desc + ', high ' + dayAfter.highF + '°F, low ' + dayAfter.lowF + '°F.');
-      }
-      return { role: 'system', content: parts.join(' ') };
-    }
-
-    function isWeatherQuestion(text) {
-      return /\b(weather|forecast|rain|snow|temperature|temp|degree|degrees|hot|cold|warm|cool|humid|windy|outside|outside\s+like|feels?\s+like|precipitation|rain\s+chance)\b/i.test(text);
-    }
-
-    function weatherReplyFor(text) {
-      const wantsTomorrow = /\btomorrow\b/i.test(text);
-      const wantsDaily = /\bdaily\b/i.test(text) || /\btoday\b/i.test(text) || /\btonight\b/i.test(text);
-      const wantsWeekly = /\bweekly\b/i.test(text) || /\bweek\b/i.test(text) || /\bthis\s+week\b/i.test(text) || /\bnext\s+week\b/i.test(text) || /\bweekend\b/i.test(text);
-      const current = state.weather;
-      const forecast = state.forecast || [];
-      if (!current && !forecast.length) return null;
-      const chunks = [];
-      if (wantsDaily && current) chunks.push('**Today:** ' + current.tempF + '° and ' + current.desc + '.');
-      if (wantsTomorrow) {
-        const tomorrow = forecast.find(d => d.label === 'Tomorrow') || forecast[1] || forecast[0];
-        if (tomorrow) chunks.push('**Tomorrow:** ' + tomorrow.desc + ', high ' + tomorrow.highF + '°, low ' + tomorrow.lowF + '°.');
-      }
-      if (wantsWeekly && forecast.length) {
-        const week = forecast.slice(0, 4).map(d => d.label + ': high ' + d.highF + '°, low ' + d.lowF + '°').join('. ');
-        chunks.push('**Week:** ' + week + '.');
-      }
-      if (!chunks.length && current) chunks.push('**Now:** ' + current.tempF + '° and ' + current.desc + '.');
-      return chunks.length ? chunks.join(' ') : null;
-    }
-
     // ---------- chat ----------
-    function parseAction(text) {
+        function parseAction(text) {
       const match = (text || '').match(/\[(ACTION:[^\]]+)\]/);
       const action = match ? match[1] : null;
       const clean = action ? text.replace(/\[ACTION:[^\]]+\]\s*/g, '').trim() : (text || '').trim();
@@ -656,57 +487,29 @@
     }
 
     async function handleUser(text, source = 'text') {
-      addLine('you', text);
-      const travelTarget = resolveTravelTarget(text);
-      if (travelTarget) {
-        const phrase = 'Flying to **' + travelTarget.name + '**.';
-        addLine('kyo', phrase);
-        speak(phrase.replace(/\*\*/g, ''));
-        showTravelScene(travelTarget);
-        return;
-      }
-      if (isWeatherQuestion(text)) {
-        if (!state.location) {
-          addLine('kyo', 'I need location permission to check weather. Tap allow, then ask me again.');
-          speak('I need location permission to check weather.');
-          initLocation();
-          return;
-        }
-        setMode('thinking');
-        const ok = await refreshWeather();
-        setMode('idle');
-        const weather = weatherReplyFor(text);
-        if (weather) {
-          addLine('kyo', weather);
-          speak(weather.replace(/\*\*/g, ''));
-          return;
-        }
-        addLine('kyo', ok ? 'I have the forecast, but could not shape a clean answer.' : 'Weather data unavailable yet.');
-        speak(ok ? 'I have the forecast, but could not shape a clean answer.' : 'Weather data unavailable yet.');
-        return;
-      }
+          addLine('you', text);
 
-      if (!hasCloudSession()) {
-              addLine('kyo', 'Tap the gear and sign in with Google to use the Hermes relay.');
-              speak('Sign in with Google in settings.');
-              return;
-            }
-      state.messages.push({ role: 'user', content: text });
-      setMode('thinking');
-      try {
-        const raw = await sendToCloud();
-        const { text: reply, action } = parseAction(raw);
-        state.messages.push({ role: 'assistant', content: raw });
-        addLine('kyo', reply || raw);
-        speak(stripForTTS(reply || raw));
-        if (action) runAction(action);
-      } catch (e) {
-        setMode('idle');
-        const msg = (e && e.message) ? e.message : 'Something went wrong.';
-        addLine('kyo', 'Error: ' + msg);
-        speak('Something went wrong.');
-      }
-    }
+          if (!hasCloudSession()) {
+            addLine('kyo', 'Tap the gear and sign in with Google to use the Hermes relay.');
+            speak('Sign in with Google in settings.');
+            return;
+          }
+          state.messages.push({ role: 'user', content: text });
+          setMode('thinking');
+          try {
+            const raw = await sendToCloud();
+            const { text: reply, action } = parseAction(raw);
+            state.messages.push({ role: 'assistant', content: raw });
+            addLine('kyo', reply || raw);
+            speak(stripForTTS(reply || raw));
+            if (action) runAction(action);
+          } catch (e) {
+            setMode('idle');
+            const msg = (e && e.message) ? e.message : 'Something went wrong.';
+            addLine('kyo', 'Error: ' + msg);
+            speak('Something went wrong.');
+          }
+        }
 
     function stripForTTS(text) {
       return text
@@ -995,29 +798,31 @@
               }
             }
           }
-        }
-      };
-      wakeRecognition.onerror = () => { wakeRecognition = null; };
-      try { wakeRecognition.start(); } catch (e) { wakeRecognition = null; }
-    }
+                  }
+                };
+                wakeRecognition.onerror = () => { wakeRecognition = null; };
+                try { wakeRecognition.start(); } catch (e) { wakeRecognition = null; }
+              }
 
-    // ---------- travel fly-to ----------
-    function showTravelScene(target) {
-      els.travelTitle.textContent = target.name;
-      els.travelSub.textContent = 'Locking onto ' + target.name + '.';
-      els.travelChiprow.innerHTML = '';
-      (target.chips || []).forEach(c => {
-        const chip = document.createElement('span');
-        chip.className = 'travel-chip';
-        chip.textContent = c;
-        els.travelChiprow.appendChild(chip);
-      });
-      els.travel.classList.add('show');
-      setTimeout(() => els.travel.classList.remove('show'), 3200);
-    }
+              function liveContext() {
+                const now = new Date();
+                return { role: 'system', content: 'Live system note — current local date/time: ' +
+                  now.toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + '.' };
+              }
 
-    // ---------- events ----------
-    els.mic.addEventListener('click', listen);
+              function stripForTTS(text) {
+                return text
+                  .replace(/\*\*([^*]+)\*\*/g, '$1')
+                  .replace(/\*([^*]+)\*/g, '$1')
+                  .replace(/`[^`]+`/g, '')
+                  .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+                  .replace(/https?:\/\/\S+/g, '')
+                  .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+                  .replace(/\s+/g, ' ').trim();
+              }
+
+              // ---------- events ----------
+              els.mic.addEventListener('click', listen);
     if (els.composer) {
       els.composer.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -1043,13 +848,10 @@
     });
 
     // ---------- ambient init ----------
-    initLocation();
-    cloud.init().then(() => {
-      if (cloudState.ready && hasCloudSession()) {
-        refreshWeather();
-      }
-    });
-    els.chatInput && els.chatInput.focus();
+        cloud.init().then(() => {
+          // Cloud connected
+        });
+        els.chatInput && els.chatInput.focus();
     els.verTag.textContent = 'Winston v' + APP_VERSION;
 
     // ---------- startup ----------

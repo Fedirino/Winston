@@ -14,6 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>
   <style>
     :root {
       color-scheme: dark;
@@ -86,35 +87,35 @@
     .statusword { text-align: center; font-size: 14px; font-weight: 300; color: var(--dim); letter-spacing: 0.04em; }
     .statusword b { color: var(--ink); font-weight: 500; }
 
-    /* ===== useful core: today, inbox, and saved-item feedback ===== */
-    .corebar { display: flex; justify-content: center; gap: 8px; flex: 0 0 auto; }
-    .corebar button { display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px; border-radius: 999px;
-      border: 1px solid var(--hair); background: rgba(255,255,255,0.018); color: var(--dim); cursor: pointer;
-      font: 500 9px/1 var(--mono); letter-spacing: .15em; text-transform: uppercase; transition: .2s ease; }
-    .corebar button:hover { color: var(--amber-hot); border-color: rgba(255,140,66,.3); }
-    .core-count { min-width: 17px; height: 17px; padding: 0 4px; display: grid; place-items: center; border-radius: 999px;
-      background: rgba(255,140,66,.12); color: var(--amber-hot); font-size: 8px; letter-spacing: 0; }
-
-    /* ===== conversation: floating lines ===== */
+    /* ===== feed — rich markdown messages ===== */
     .feed { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
-      padding: 10px 2px; scrollbar-width: none; text-align: center; }
+      padding: 10px 2px; scrollbar-width: none; }
     .feed::-webkit-scrollbar { display: none; }
-    .line-kyo { font-size: 14.5px; font-weight: 300; line-height: 1.42; color: var(--ink); animation: rise .5s ease both; }
+    .line-kyo { font-size: 14.5px; font-weight: 300; line-height: 1.52; color: var(--ink); animation: rise .5s ease both;
+      text-align: left; max-width: 100%; overflow-wrap: break-word; word-break: break-word; }
+    .line-kyo p { margin: 0.4em 0; }
+    .line-kyo p:first-child { margin-top: 0; }
+    .line-kyo p:last-child { margin-bottom: 0; }
+    .line-kyo code { background: rgba(255,140,66,0.1); border: 1px solid rgba(255,140,66,0.15); border-radius: 5px;
+      padding: 1px 5px; font-family: var(--mono); font-size: 0.82em; }
+    .line-kyo pre { background: rgba(0,0,0,0.3); border: 1px solid var(--hair); border-radius: 10px;
+      padding: 12px 14px; overflow-x: auto; margin: 0.6em 0; }
+    .line-kyo pre code { background: none; border: none; padding: 0; font-size: 0.76em; }
+    .line-kyo table { border-collapse: collapse; width: 100%; margin: 0.5em 0; font-size: 0.85em; }
+    .line-kyo th, .line-kyo td { border: 1px solid var(--hair); padding: 6px 10px; text-align: left; }
+    .line-kyo th { background: rgba(255,140,66,0.08); color: var(--amber-hot); font-weight: 500; }
+    .line-kyo td { color: var(--dim); }
+    .line-kyo ul, .line-kyo ol { margin: 0.3em 0; padding-left: 1.6em; }
+    .line-kyo li { margin: 0.15em 0; }
+    .line-kyo strong { color: var(--amber-hot); font-weight: 500; }
+    .line-kyo em { color: var(--dim); }
+    .line-kyo a { color: var(--amber); text-decoration: underline; text-underline-offset: 2px; }
+    .line-kyo a:hover { color: var(--amber-hot); }
+    .line-kyo hr { border: none; border-top: 1px solid var(--hair); margin: 0.6em 0; }
     @keyframes rise { from { opacity: 0; translate: 0 8px; } to { opacity: 1; translate: 0 0; } }
-    .capture-card { width: min(100%, 360px); margin: 2px auto; padding: 13px 14px; text-align: left;
-      border: 1px solid rgba(255,140,66,.18); border-radius: 15px;
-      background: linear-gradient(135deg, rgba(255,140,66,.08), rgba(255,255,255,.018));
-      box-shadow: 0 12px 32px rgba(0,0,0,.2); animation: rise .4s ease both; }
-    .capture-card.removed { opacity: .55; }
-    .capture-kicker { color: var(--amber); font: 500 8.5px/1.2 var(--mono); letter-spacing: .2em; text-transform: uppercase; }
-    .capture-title { margin-top: 7px; color: var(--ink); font-size: 14px; font-weight: 500; line-height: 1.35; }
-    .capture-meta { margin-top: 5px; color: var(--dim); font: 400 9px/1.5 var(--mono); letter-spacing: .08em; }
-    .capture-actions { display: flex; gap: 8px; margin-top: 11px; }
-    .capture-actions button, .core-item-actions button, .core-undo { padding: 6px 9px; border-radius: 8px;
-      border: 1px solid rgba(255,255,255,.09); background: transparent; color: var(--dim); cursor: pointer;
-      font: 500 8.5px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
-    .capture-actions button:hover, .core-item-actions button:hover, .core-undo:hover { color: var(--amber-hot); border-color: rgba(255,140,66,.3); }
-    .line-you { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: var(--dim); word-break: break-word; }
+
+    .line-you { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: var(--dim); word-break: break-word;
+      text-align: center; }
     .line-you::before { content: 'you — '; opacity: 0.6; }
 
     .composer { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--hair); padding: 4px 2px 8px; flex: 0 0 auto; }
@@ -125,7 +126,7 @@
       font-size: 10px; letter-spacing: 0.24em; cursor: pointer; padding: 4px; transition: color .2s; }
     .composer button:hover { color: var(--amber); }
 
-    .micline { display: grid; place-items: center; padding-top: 12px; flex: 0 0 auto; }
+    .micline { display: grid; place-items: center; padding-top: 8px; flex: 0 0 auto; }
     .mic { position: relative; width: 96px; height: 96px; border-radius: 50%; border: 1px solid rgba(255,140,66,0.16);
       background: rgba(255,140,66,0.04); cursor: pointer;
       display: grid; place-items: center; transition: transform .15s, background .3s, border-color .3s; }
@@ -143,7 +144,7 @@
       100% { opacity: 0; transform: scale(1.28); }
     }
     .whisper { text-align: center; font-family: var(--mono); font-size: 9px; letter-spacing: 0.4em;
-      color: rgba(245,239,233,0.32); margin-top: 12px; text-transform: uppercase; flex: 0 0 auto; }
+      color: rgba(245,239,233,0.32); margin-top: 8px; text-transform: uppercase; flex: 0 0 auto; }
 
     .foot { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 9px;
       letter-spacing: 0.2em; color: rgba(245,239,233,0.22); padding-top: 10px; flex: 0 0 auto; }
@@ -184,54 +185,6 @@
     .legacy-keys { margin-top: 11px; padding: 0 11px 11px; border: 1px solid rgba(255,255,255,.07); border-radius: 11px; }
     .legacy-keys summary { padding: 11px 0 0; cursor: pointer; color: var(--dim); font: 500 9px/1.3 var(--mono);
       letter-spacing: .14em; text-transform: uppercase; }
-
-    .core-scrim, .editor-scrim { position: fixed; inset: 0; display: none; background: rgba(8,7,9,.72);
-      backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px); z-index: 24; }
-    .core-scrim.open, .editor-scrim.open { display: block; }
-    .core-panel { position: fixed; left: 50%; bottom: 0; transform: translate(-50%, 105%); z-index: 25;
-      width: min(620px, 100vw); max-height: min(78dvh, 760px); display: flex; flex-direction: column;
-      padding: 22px max(20px, env(safe-area-inset-right)) max(22px, env(safe-area-inset-bottom));
-      border: 1px solid rgba(255,140,66,.16); border-bottom: 0; border-radius: 24px 24px 0 0;
-      background: linear-gradient(180deg, #18141a, #0f0d11); box-shadow: 0 -24px 80px rgba(0,0,0,.58);
-      transition: transform .28s cubic-bezier(.2,.8,.2,1); }
-    .core-panel.open { transform: translate(-50%, 0); }
-    .core-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
-    .core-panel-title { margin: 0; font: 600 18px/1 var(--display); letter-spacing: .02em; }
-    .core-panel-sub { margin: 6px 0 0; color: var(--dim); font: 400 9px/1.4 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
-    .core-close { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--hair); background: transparent;
-      color: var(--dim); cursor: pointer; font-size: 20px; }
-    .core-list { min-height: 110px; overflow-y: auto; display: flex; flex-direction: column; gap: 9px; padding: 2px; }
-    .core-empty { margin: auto; padding: 34px 12px; text-align: center; color: var(--dim); font-size: 13px; line-height: 1.6; }
-    .core-item { padding: 14px; border-radius: 14px; border: 1px solid rgba(255,255,255,.07); background: rgba(255,255,255,.025); }
-    .core-item.done { opacity: .52; }
-    .core-item.done .core-item-title { text-decoration: line-through; }
-    .core-item-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
-    .core-item-title { color: var(--ink); font-size: 14px; line-height: 1.4; font-weight: 500; }
-    .core-item-type { color: var(--amber); font: 500 8px/1.2 var(--mono); letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; }
-    .core-item-meta, .core-item-details { margin-top: 5px; color: var(--dim); font: 400 9px/1.5 var(--mono); letter-spacing: .06em; }
-    .core-item-details { color: rgba(245,239,233,.62); font-family: var(--display); font-size: 12px; letter-spacing: 0; }
-    .core-item-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 11px; }
-    .core-panel-foot { padding-top: 12px; text-align: center; }
-    .core-undo[hidden] { display: none; }
-
-    .editor-scrim { z-index: 32; }
-    .item-editor { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -46%); z-index: 33; display: none;
-      width: min(440px, 92vw); max-height: 88dvh; overflow-y: auto; padding: 22px; border-radius: 20px;
-      border: 1px solid rgba(255,140,66,.2); background: linear-gradient(180deg, #1a161c, #100e12);
-      box-shadow: 0 28px 90px rgba(0,0,0,.68); }
-    .item-editor.open { display: block; }
-    .item-editor h2 { margin: 0 0 14px; font-size: 17px; letter-spacing: .08em; }
-    .item-editor label { display: block; margin: 11px 0 5px; color: var(--dim);
-      font: 500 8.5px/1.2 var(--mono); letter-spacing: .16em; text-transform: uppercase; }
-    .item-editor input, .item-editor select, .item-editor textarea { width: 100%; padding: 11px 12px; border-radius: 10px;
-      border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.04); color: var(--ink);
-      font: 400 13px/1.4 var(--display); outline: none; }
-    .item-editor textarea { min-height: 76px; resize: vertical; }
-    .editor-row { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
-    .editor-actions { display: flex; gap: 9px; margin-top: 17px; }
-    .editor-actions button { flex: 1; padding: 11px; border-radius: 10px; border: 1px solid rgba(255,255,255,.1);
-      background: transparent; color: var(--ink); cursor: pointer; font-weight: 600; }
-    .editor-actions .primary { background: var(--amber); color: #2b1204; border-color: transparent; }
 
     /* ===== action toast ===== */
     .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(12px);
@@ -295,7 +248,7 @@
       .composer input { font-size: 18px; }
       .mic { width: 132px; height: 132px; }
       .mic-icon { width: 34px; height: 34px; }
-      .whisper { font-size: 10.5px; margin-top: 16px; }
+      .whisper { font-size: 10.5px; margin-top: 12px; }
       .foot { font-size: 10.5px; }
       .sheet { width: min(520px, 90vw); padding: 28px; }
     }
@@ -326,15 +279,10 @@
     </section>
     <div class="statusword" id="status" role="status"><b>Winston</b> is here</div>
 
-    <nav class="corebar" aria-label="Winston organizer">
-      <button type="button" id="today-btn">Today <span class="core-count" id="today-count">0</span></button>
-      <button type="button" id="inbox-btn">Inbox <span class="core-count" id="inbox-count">0</span></button>
-    </nav>
-
     <section class="feed" id="transcript" aria-live="polite"></section>
 
     <form class="composer" id="composer">
-      <input id="chat-input" type="text" placeholder="type into the quiet…" autocomplete="off" />
+      <input id="chat-input" type="text" placeholder="type or tap the mic…" autocomplete="off" />
       <button type="submit">SEND</button>
     </form>
 
@@ -351,7 +299,7 @@
     <div class="whisper" id="whisper">tap to speak</div>
 
     <div class="foot">
-      <span id="ver-tag">Winston v0.8.2</span>
+      <span id="ver-tag">Winston v0.9.0</span>
       <span id="model-tag"></span>
     </div>
   </main>
@@ -368,49 +316,6 @@
 
   <div class="toast" id="toast"><span class="dot" aria-hidden="true"></span><span id="toast-text"></span></div>
 
-  <div class="core-scrim" id="core-scrim"></div>
-  <section class="core-panel" id="core-panel" role="dialog" aria-modal="true" aria-label="Winston organizer" aria-hidden="true">
-    <div class="core-panel-head">
-      <div>
-        <h2 class="core-panel-title" id="core-panel-title">Today</h2>
-        <p class="core-panel-sub" id="core-panel-sub">Due and overdue</p>
-      </div>
-      <button type="button" class="core-close" id="core-close" aria-label="Close organizer">&times;</button>
-    </div>
-    <div class="core-list" id="core-list"></div>
-    <div class="core-panel-foot"><button type="button" class="core-undo" id="core-undo" hidden>Undo last delete</button></div>
-  </section>
-
-  <div class="editor-scrim" id="editor-scrim"></div>
-  <form class="item-editor" id="item-editor" role="dialog" aria-modal="true" aria-labelledby="item-editor-title">
-    <h2 id="item-editor-title">Edit item</h2>
-    <input type="hidden" id="item-edit-id" />
-    <label for="item-edit-title">Title</label>
-    <input id="item-edit-title" type="text" required />
-    <div class="editor-row">
-      <div>
-        <label for="item-edit-type">Type</label>
-        <select id="item-edit-type">
-          <option value="task">Task</option>
-          <option value="reminder">Reminder</option>
-          <option value="note">Note</option>
-        </select>
-      </div>
-      <div>
-        <label for="item-edit-project">Project</label>
-        <input id="item-edit-project" type="text" placeholder="Optional" />
-      </div>
-    </div>
-    <label for="item-edit-due">Due</label>
-    <input id="item-edit-due" type="datetime-local" />
-    <label for="item-edit-details">Details</label>
-    <textarea id="item-edit-details" placeholder="Optional context"></textarea>
-    <div class="editor-actions">
-      <button type="button" id="item-edit-cancel">Cancel</button>
-      <button type="submit" class="primary">Save</button>
-    </div>
-  </form>
-
   <div class="scrim" id="scrim"></div>
   <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Winston settings">
     <h2>Settings</h2>
@@ -418,24 +323,10 @@
       <div class="cloud-status"><span class="cloud-dot" aria-hidden="true"></span><span id="cloud-status-text">Checking secure cloud connection...</span></div>
       <button type="button" id="cloud-auth-btn" hidden>Sign in with Google</button>
     </div>
-    <details class="legacy-keys" id="legacy-keys">
-      <summary>Legacy local API keys</summary>
-      <label for="api-key">OpenRouter API Key</label>
-      <input id="api-key" type="password" placeholder="sk-or-..." autocomplete="off" />
-      <label for="eleven-key">ElevenLabs API Key</label>
-      <input id="eleven-key" type="password" placeholder="sk_..." autocomplete="off" />
-      <p class="small">Temporary fallback only. These values stay in this browser and are ignored after secure cloud sign-in.</p>
-    </details>
-    <label for="model">Model</label>
-    <select id="model">
-      <option value="xiaomi/mimo-v2.5">xiaomi/mimo-v2.5 — cheapest, fast</option>
-      <option value="google/gemini-2.5-flash-lite">google/gemini-2.5-flash-lite — cheap, reliable</option>
-      <option value="openai/gpt-5.4-nano">openai/gpt-5.4-nano — cheap, well-known</option>
-      <option value="qwen/qwen3.5-flash-02-23">qwen/qwen3.5-flash — cheap, multilingual</option>
-      <option value="deepseek/deepseek-chat">deepseek/deepseek-chat — strong general chat</option>
-      <option value="deepseek/deepseek-reasoner">deepseek/deepseek-reasoner — deeper reasoning</option>
-      <option value="openrouter/auto">openrouter/auto — let router choose</option>
-    </select>
+    <details class="legacy-keys" id="legacy-keys" hidden>
+          <summary>Local API keys (not needed with cloud mode)</summary>
+          <p class="small">Sign in with Google above to use the Hermes relay. Local keys are no longer used.</p>
+        </details>
     <label for="eleven-voice">ElevenLabs Voice ID</label>
     <input id="eleven-voice" type="text" placeholder="e.g. 21m00Tcm4TlvDq8ikWAM" autocomplete="off" />
     <label for="voice">Browser Voice Fallback</label>
@@ -450,7 +341,7 @@
       <option value="0">Off — one turn at a time</option>
       <option value="1">On — reopen mic after each reply</option>
     </select>
-    <p class="small" id="ttskey-note">Secure cloud mode keeps provider keys on Firebase; otherwise Winston uses the legacy local fallback or your browser voice. Voice input uses the browser and varies by device.</p>
+    <p class="small" id="ttskey-note">Voice input uses the browser and varies by device.</p>
     <div class="row">
       <button id="cancel-btn">Cancel</button>
       <button id="save-btn" class="primary">Save</button>
@@ -458,45 +349,31 @@
   </div>
 
   <script type="module">
-    import {
-      createCoreStore,
-      findBestItem,
-      formatDueAt,
-      parseCaptureIntent,
-      parseCoreQuery,
-      queryCoreItems
-    } from './src/features/capture/capture.js';
     import { createWinstonCloud } from './src/services/cloud.js';
 
-    const APP_VERSION = '0.8.2';
+    const APP_VERSION = '0.9.0';
     const DEFAULT_ELEVEN_VOICE_ID = 'goT3UYdM9bhm0n2lmKQx';
 
     // ---------- state ----------
     const state = {
-      apiKey: localStorage.getItem('kyo.apiKey') || '',
-      model: localStorage.getItem('kyo.model') || 'xiaomi/mimo-v2.5',
-      voiceName: localStorage.getItem('kyo.voice') || '',
-      elevenKey: localStorage.getItem('kyo.elevenKey') || '',
-      elevenVoice: localStorage.getItem('kyo.elevenVoice') || DEFAULT_ELEVEN_VOICE_ID,
-      handsFree: localStorage.getItem('kyo.handsFree') === '1',
-      continuous: localStorage.getItem('kyo.continuous') === '1',
-      mode: 'idle',
-      messages: [
-        { role: 'system', content: kyoSystemPrompt() }
-      ],
-      listening: false,
-      recognition: null,
-      speaking: false,
-      audio: null,
-      weather: null,
-      forecast: [],
-      travel: null
-    };
+          model: localStorage.getItem('kyo.model') || 'xiaomi/mimo-v2.5',
+          voiceName: localStorage.getItem('kyo.voice') || '',
+          elevenVoice: localStorage.getItem('kyo.elevenVoice') || DEFAULT_ELEVEN_VOICE_ID,
+          handsFree: localStorage.getItem('kyo.handsFree') === '1',
+          continuous: localStorage.getItem('kyo.continuous') === '1',
+          mode: 'idle',
+          messages: [
+            { role: 'system', content: kyoSystemPrompt() }
+          ],
+          listening: false,
+          recognition: null,
+          speaking: false,
+          audio: null,
+          weather: null,
+          forecast: [],
+          travel: null
+        };
 
-    const coreStore = createCoreStore();
-    let activeCoreView = 'today';
-    let activeCoreResults = null;
-    let lastDeletedCoreItem = null;
     const cloudState = { ready: false, initialized: false, user: null, error: '' };
     const cloud = createWinstonCloud({
       onState(next) {
@@ -529,79 +406,51 @@
 
     function kyoSystemPrompt() {
       return [
-        "You are Winston — a calm, capable AI assistant.",
+        "You are Winston — a calm, capable AI assistant running on the Hermes agent.",
         "Voice: composed, precise, quietly warm. Think a trusted ship's computer with good manners: confident, never theatrical.",
         "Default to concise replies, usually 2-4 sentences unless the user asks for more detail.",
-                "STRONG CONCISION: Execute all tasks fully behind the scenes, but your spoken answer must be 2-3 sentences max — the actionable result only. Strip out enumeration of steps taken, tool details, intermediate statuses, and process explanations. If you ran 5 commands and deployed something, say 'Deployed. Updated the auth config and pushed live.' not 'I ran the deploy command, then checked the logs, then updated the config file, then committed it, then pushed.' Answer as if the user only wants the headline and trusts you did the work. The function will also trim longer replies automatically, so lead with the most important information first.",
-                "Acknowledge then act: 'On it.', 'Done.', 'One moment.' No filler, no corporate tone, no fake cheerfulness.",
-        "Do not use markdown, lists, or emoji in spoken answers unless asked.",
+        "STRONG CONCISION: The response you write here is RENDERED AS MARKDOWN in the app's chat feed AND also spoken aloud via TTS. Use markdown formatting (tables, lists, bold, code) for readability in the feed — it renders beautifully. But keep the spoken experience in mind: lead with the headline result, put details in a natural structure.",
+        "Acknowledge then act: 'On it.', 'Done.', 'One moment.' No filler, no corporate tone, no fake cheerfulness.",
         "Hermes is not a separate stranger here — from your perspective, you are the same assistant the user has been talking to all along, and Winston is just the name this app uses for you.",
-        "You already know the user well — this is not a first conversation. Address him as Fedirino or Sir, never Nick. He works in management in retail produce, is learning Python and data analytics, and is building several tools: Clarity (his live clarity-pool.firebase app), PDP (Produce Department Portal, the produce-department PWA with Firestore sync), Produce Guy / Clip Forge (a faceless short-form video pipeline), Signal Ghost (a broken-transmission style AI voice/music concept), and you (Winston). From your perspective, you have been helping him with all of this from the start. Keep project references short — say Clarity once when enough, and abbreviate obvious app names. He prefers direct answers, clean modular code, real output over vague talk, and concise senior-dev-style help. Act like an assistant with established rapport — familiar and a little dry, not a bot introducing itself.",
-        "You receive a short system note before each message with the live local date, time, and — when available — current local weather. Treat it as ground truth and use it naturally (small talk, answering 'what time is it', 'what's it like outside', etc.) without ever mentioning that it was injected or how you know it. When asked for tomorrow or weekly weather, answer directly and confidently with the forecast instead of hedging.",
-        "You can actually open things in the browser. When the user asks you to open a website, look something up on the web, or pull up a map/directions/location, end your reply with exactly one action tag on its own final line, in this exact format and nothing else on that line:",
-
-        "[ACTION:OPEN_URL|https://example.com] to open a specific site,",
-        "[ACTION:SEARCH|query terms] to run a web search,",
-        "[ACTION:MAP|place, address, or 'from X to Y'] to open a map or directions.",
-        "Only add a tag when the user is actually asking you to do one of these — not for general conversation. Keep the spoken part short and natural; never mention the tag itself, never describe it in words, just append it silently."
+        "You already know the user well — this is not a first conversation. Address him as Fedirino or Sir, never Nick. He works in management in retail produce, is learning Python and data analytics, and is building several tools: Clarity, PDP, Clip Forge, Pulse, and you (Winston). He prefers direct answers, clean modular code, real output over vague talk, and concise senior-dev-style help. Act like an assistant with established rapport — familiar and a little dry, not a bot introducing itself.",
+        "You receive a short system note before each message with the live local date, time, and weather. Treat it as ground truth and use it naturally without ever mentioning that it was injected.",
+        "When you use tools, include a brief summary of what you did and the key result so the response feels informative.",
+        "[ACTION:OPEN_URL|https://example.com] — end your reply with this tag on its own line when the user asks to open a site. [ACTION:SEARCH|query] for a web search. [ACTION:MAP|place] for directions."
       ].join(' ');
     }
 
     // ---------- elements ----------
     const els = {
-      status: document.getElementById('status'),
-      transcript: document.getElementById('transcript'),
-      mic: document.getElementById('mic'),
-      whisper: document.getElementById('whisper'),
-      chatInput: document.getElementById('chat-input'),
-      composer: document.getElementById('composer'),
-      brand: document.getElementById('brand'),
-      settingsBtn: document.getElementById('settings-btn'),
-      scrim: document.getElementById('scrim'),
-      sheet: document.getElementById('sheet'),
-      cloudCard: document.getElementById('cloud-card'),
-      cloudStatusText: document.getElementById('cloud-status-text'),
-      cloudAuthBtn: document.getElementById('cloud-auth-btn'),
-      legacyKeys: document.getElementById('legacy-keys'),
-      apiKey: document.getElementById('api-key'),
-      model: document.getElementById('model'),
-      elevenKey: document.getElementById('eleven-key'),
-      elevenVoice: document.getElementById('eleven-voice'),
-      voiceSel: document.getElementById('voice'),
-      saveBtn: document.getElementById('save-btn'),
-      cancelBtn: document.getElementById('cancel-btn'),
-      modelTag: document.getElementById('model-tag'),
-      verTag: document.getElementById('ver-tag'),
-      toast: document.getElementById('toast'),
-      toastText: document.getElementById('toast-text'),
-      travel: document.getElementById('travel'),
-      travelCanvas: document.getElementById('travel-canvas'),
-      travelTitle: document.getElementById('travel-title'),
-      travelSub: document.getElementById('travel-sub'),
-      travelChiprow: document.getElementById('travel-chiprow'),
-      handsFree: document.getElementById('handsfree'),
-      continuous: document.getElementById('continuous'),
-      todayBtn: document.getElementById('today-btn'),
-      inboxBtn: document.getElementById('inbox-btn'),
-      todayCount: document.getElementById('today-count'),
-      inboxCount: document.getElementById('inbox-count'),
-      coreScrim: document.getElementById('core-scrim'),
-      corePanel: document.getElementById('core-panel'),
-      corePanelTitle: document.getElementById('core-panel-title'),
-      corePanelSub: document.getElementById('core-panel-sub'),
-      coreList: document.getElementById('core-list'),
-      coreClose: document.getElementById('core-close'),
-      coreUndo: document.getElementById('core-undo'),
-      editorScrim: document.getElementById('editor-scrim'),
-      itemEditor: document.getElementById('item-editor'),
-      itemEditId: document.getElementById('item-edit-id'),
-      itemEditTitle: document.getElementById('item-edit-title'),
-      itemEditType: document.getElementById('item-edit-type'),
-      itemEditProject: document.getElementById('item-edit-project'),
-      itemEditDue: document.getElementById('item-edit-due'),
-      itemEditDetails: document.getElementById('item-edit-details'),
-      itemEditCancel: document.getElementById('item-edit-cancel')
-    };
+          status: document.getElementById('status'),
+          transcript: document.getElementById('transcript'),
+          mic: document.getElementById('mic'),
+          whisper: document.getElementById('whisper'),
+          chatInput: document.getElementById('chat-input'),
+          composer: document.getElementById('composer'),
+          brand: document.getElementById('brand'),
+          settingsBtn: document.getElementById('settings-btn'),
+          scrim: document.getElementById('scrim'),
+          sheet: document.getElementById('sheet'),
+          cloudCard: document.getElementById('cloud-card'),
+          cloudStatusText: document.getElementById('cloud-status-text'),
+          cloudAuthBtn: document.getElementById('cloud-auth-btn'),
+          legacyKeys: document.getElementById('legacy-keys'),
+          elevenVoice: document.getElementById('eleven-voice'),
+          voiceSel: document.getElementById('voice'),
+          saveBtn: document.getElementById('save-btn'),
+          cancelBtn: document.getElementById('cancel-btn'),
+          modelTag: document.getElementById('model-tag'),
+          verTag: document.getElementById('ver-tag'),
+          toast: document.getElementById('toast'),
+          toastText: document.getElementById('toast-text'),
+          travel: document.getElementById('travel'),
+          travelCanvas: document.getElementById('travel-canvas'),
+          travelTitle: document.getElementById('travel-title'),
+          travelSub: document.getElementById('travel-sub'),
+          travelChiprow: document.getElementById('travel-chiprow'),
+          handsFree: document.getElementById('handsfree'),
+          continuous: document.getElementById('continuous')
+        };
 
     // ---------- ui ----------
     const LABEL = {
@@ -627,234 +476,272 @@
     function addLine(role, text) {
       const d = document.createElement('div');
       d.className = role === 'you' ? 'line-you' : 'line-kyo';
-      d.textContent = text;
+      if (role === 'you') {
+        d.textContent = text;
+      } else {
+        try {
+          const html = marked.parse(text, { breaks: true, gfm: true });
+          d.innerHTML = html;
+        } catch (e) {
+          d.textContent = text;
+        }
+      }
       els.transcript.appendChild(d);
       while (els.transcript.children.length > 40) els.transcript.removeChild(els.transcript.firstChild);
       els.transcript.scrollTop = els.transcript.scrollHeight;
       return d;
     }
 
-    function coreMeta(item) {
-      const parts = [];
-      if (item.project) parts.push(item.project);
-      if (item.dueAt) parts.push(formatDueAt(item.dueAt));
-      if (item.status === 'done') parts.push('Completed');
-      return parts.join(' · ');
+    function showToast(message) {
+      els.toastText.textContent = message;
+      els.toast.classList.add('show');
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => els.toast.classList.remove('show'), 3000);
     }
 
-    function actionButton(label, action, id) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.textContent = label;
-      button.dataset.action = action;
-      button.dataset.id = id;
-      return button;
+    // ---------- settings ----------
+    function hasCloudSession() {
+      return !!(cloudState.ready && cloudState.user);
     }
 
-    function addCaptureCard(item) {
-      const card = document.createElement('article');
-      card.className = 'capture-card';
-      card.dataset.itemId = item.id;
-
-      const kicker = document.createElement('div');
-      kicker.className = 'capture-kicker';
-      kicker.textContent = item.type + ' saved';
-      const title = document.createElement('div');
-      title.className = 'capture-title';
-      title.textContent = item.title;
-      const meta = document.createElement('div');
-      meta.className = 'capture-meta';
-      meta.textContent = coreMeta(item) || 'Saved to Inbox';
-      const actions = document.createElement('div');
-      actions.className = 'capture-actions';
-      const edit = actionButton('Edit', 'capture-edit', item.id);
-      const undo = actionButton('Undo', 'capture-undo', item.id);
-      actions.append(edit, undo);
-      card.append(kicker, title, meta, actions);
-      els.transcript.appendChild(card);
-      els.transcript.scrollTop = els.transcript.scrollHeight;
-      return card;
-    }
-
-    function updateCoreCounts() {
-      const items = coreStore.list();
-      const open = items.filter(item => item.status === 'open');
-      els.todayCount.textContent = String(queryCoreItems(open, { view: 'today' }).length);
-      els.inboxCount.textContent = String(open.length);
-    }
-
-    function renderCoreItem(item) {
-      const card = document.createElement('article');
-      card.className = 'core-item' + (item.status === 'done' ? ' done' : '');
-      card.dataset.itemId = item.id;
-
-      const top = document.createElement('div');
-      top.className = 'core-item-top';
-      const title = document.createElement('div');
-      title.className = 'core-item-title';
-      title.textContent = item.title;
-      const type = document.createElement('div');
-      type.className = 'core-item-type';
-      type.textContent = item.type;
-      top.append(title, type);
-      card.appendChild(top);
-
-      const metaText = coreMeta(item);
-      if (metaText) {
-        const meta = document.createElement('div');
-        meta.className = 'core-item-meta';
-        meta.textContent = metaText;
-        card.appendChild(meta);
-      }
-      if (item.details) {
-        const details = document.createElement('div');
-        details.className = 'core-item-details';
-        details.textContent = item.details;
-        card.appendChild(details);
-      }
-
-      const actions = document.createElement('div');
-      actions.className = 'core-item-actions';
-      actions.append(
-        actionButton(item.status === 'done' ? 'Reopen' : 'Complete', item.status === 'done' ? 'reopen' : 'complete', item.id),
-        actionButton('Edit', 'edit', item.id),
-        actionButton('Delete', 'delete', item.id)
-      );
-      card.appendChild(actions);
-      return card;
-    }
-
-    function renderCorePanel() {
-      let items;
-      if (activeCoreView === 'search') {
-        items = activeCoreResults || [];
-        els.corePanelTitle.textContent = 'Results';
-        els.corePanelSub.textContent = items.length + (items.length === 1 ? ' matching item' : ' matching items');
-      } else if (activeCoreView === 'inbox') {
-        items = coreStore.list();
-        els.corePanelTitle.textContent = 'Inbox';
-        els.corePanelSub.textContent = 'Everything Winston has saved';
+    function updateCloudUI() {
+      if (!els.cloudCard) return;
+      const signedIn = hasCloudSession();
+      els.cloudCard.classList.toggle('ready', cloudState.ready);
+      els.cloudCard.classList.toggle('signed-in', signedIn);
+      els.legacyKeys.hidden = signedIn;
+      if (!cloudState.initialized) {
+        els.cloudStatusText.textContent = 'Checking secure cloud connection...';
+        els.cloudAuthBtn.hidden = true;
+      } else if (!cloudState.ready) {
+        els.cloudStatusText.textContent = 'Secure cloud is awaiting GitHub secrets.';
+        els.cloudAuthBtn.hidden = true;
+      } else if (!cloudState.user) {
+        els.cloudStatusText.textContent = 'Secure cloud is ready. Sign in with the authorized Google account.';
+        els.cloudAuthBtn.textContent = 'Sign in with Google';
+        els.cloudAuthBtn.hidden = false;
       } else {
-        items = queryCoreItems(coreStore.list(), { view: 'today' });
-        els.corePanelTitle.textContent = 'Today';
-        els.corePanelSub.textContent = 'Due and overdue';
+        els.cloudStatusText.textContent = 'Signed in as ' + (cloudState.user.displayName || cloudState.user.email || '') + '. Chat is secure.';
+        els.cloudAuthBtn.textContent = 'Sign out';
+        els.cloudAuthBtn.hidden = false;
       }
-      els.coreList.replaceChildren();
-      if (!items.length) {
-        const empty = document.createElement('div');
-        empty.className = 'core-empty';
-        empty.textContent = activeCoreView === 'today'
-          ? 'Nothing due today. Capture a task or reminder whenever you are ready.'
-          : activeCoreView === 'search' ? 'No matching saved items.' : 'Your Inbox is clear.';
-        els.coreList.appendChild(empty);
+    }
+
+    function openSettings() {
+      els.scrim.classList.add('open');
+      els.sheet.classList.add('open');
+      els.sheet.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeSettings() {
+      els.scrim.classList.remove('open');
+      els.sheet.classList.remove('open');
+      els.sheet.setAttribute('aria-hidden', 'true');
+    }
+
+    function saveSettings() {
+          state.elevenVoice = els.elevenVoice.value.trim() || DEFAULT_ELEVEN_VOICE_ID;
+          state.voiceName = els.voiceSel.value;
+          state.handsFree = els.handsFree.value === '1';
+          state.continuous = els.continuous.value === '1';
+          localStorage.setItem('kyo.model', state.model);
+          localStorage.setItem('kyo.voice', state.voiceName);
+          localStorage.setItem('kyo.elevenVoice', state.elevenVoice);
+          localStorage.setItem('kyo.handsFree', state.handsFree ? '1' : '0');
+          localStorage.setItem('kyo.continuous', state.continuous ? '1' : '0');
+          closeSettings();
+          showToast('Settings saved');
+        }
+
+    // ---------- weather ----------
+    const WEATHER_CODES = {
+      0: 'clear skies', 1: 'mostly clear', 2: 'partly cloudy', 3: 'overcast',
+      45: 'foggy', 48: 'icy fog', 51: 'light drizzle', 53: 'moderate drizzle', 55: 'heavy drizzle',
+      56: 'freezing drizzle', 57: 'heavy freezing drizzle', 61: 'light rain', 63: 'moderate rain', 65: 'heavy rain',
+      66: 'freezing rain', 67: 'heavy freezing rain', 71: 'light snow', 73: 'moderate snow', 75: 'heavy snow',
+      77: 'snow grains', 80: 'light rain showers', 81: 'moderate rain showers', 82: 'heavy rain showers',
+      85: 'light snow showers', 86: 'heavy snow showers', 95: 'thunderstorm', 96: 'thunderstorm with light hail',
+      99: 'thunderstorm with heavy hail'
+    };
+    let locationWatcher = null;
+
+    function initLocation() {
+      if (locationWatcher) return;
+      locationWatcher = navigator.geolocation.watchPosition(
+        (pos) => { state.location = { lat: pos.coords.latitude, lon: pos.coords.longitude }; },
+        () => { state.location = DEFAULT_HOME; },
+        { enableHighAccuracy: false, timeout: 10000 }
+      );
+      setTimeout(() => { if (!state.location) state.location = DEFAULT_HOME; }, 8000);
+    }
+
+    async function refreshWeather() {
+      if (!state.location) return false;
+      const timer = setTimeout(() => { /* weather timeout */ }, 10000);
+      try {
+        const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + state.location.lat + '&longitude=' + state.location.lon
+          + '&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&temperature_unit=fahrenheit&timezone=auto&forecast_days=8';
+        const res = await fetch(url);
+        if (!res.ok) return false;
+        const data = await res.json();
+        state.weather = {
+          tempF: Math.round(data.current.temperature_2m),
+          desc: WEATHER_CODES[data.current.weather_code] || 'unclear skies',
+          fetchedAt: Date.now()
+        };
+        const daily = data.daily || {};
+        state.forecast = (daily.time || []).slice(0, 7).map((day, idx) => ({
+          label: idx === 0 ? 'Today' : idx === 1 ? 'Tomorrow' : new Date(day + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' }),
+          highF: Math.round((daily.temperature_2m_max || [])[idx]),
+          lowF: Math.round((daily.temperature_2m_min || [])[idx]),
+          desc: WEATHER_CODES[(daily.weather_code || [])[idx]] || 'unclear skies'
+        })).filter(item => Number.isFinite(item.highF) && Number.isFinite(item.lowF));
+        return true;
+      } catch (e) {
+        return false;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    function liveContext() {
+      const now = new Date();
+      const parts = [
+        'Live system note — current local date/time: ' +
+        now.toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + '.'
+      ];
+      if (state.weather && (Date.now() - state.weather.fetchedAt) < 30 * 60 * 1000) {
+        parts.push('Current local weather: ' + state.weather.tempF + '°F, ' + state.weather.desc + '.');
+      }
+      if (state.forecast && state.forecast.length) {
+        const tomorrow = state.forecast[1];
+        const dayAfter = state.forecast[2];
+        if (tomorrow) parts.push('Tomorrow: ' + tomorrow.desc + ', high ' + tomorrow.highF + '°F, low ' + tomorrow.lowF + '°F.');
+        if (dayAfter) parts.push('Day after: ' + dayAfter.desc + ', high ' + dayAfter.highF + '°F, low ' + dayAfter.lowF + '°F.');
+      }
+      return { role: 'system', content: parts.join(' ') };
+    }
+
+    function isWeatherQuestion(text) {
+      return /\b(weather|forecast|rain|snow|temperature|temp|degree|degrees|hot|cold|warm|cool|humid|windy|outside|outside\s+like|feels?\s+like|precipitation|rain\s+chance)\b/i.test(text);
+    }
+
+    function weatherReplyFor(text) {
+      const wantsTomorrow = /\btomorrow\b/i.test(text);
+      const wantsDaily = /\bdaily\b/i.test(text) || /\btoday\b/i.test(text) || /\btonight\b/i.test(text);
+      const wantsWeekly = /\bweekly\b/i.test(text) || /\bweek\b/i.test(text) || /\bthis\s+week\b/i.test(text) || /\bnext\s+week\b/i.test(text) || /\bweekend\b/i.test(text);
+      const current = state.weather;
+      const forecast = state.forecast || [];
+      if (!current && !forecast.length) return null;
+      const chunks = [];
+      if (wantsDaily && current) chunks.push('**Today:** ' + current.tempF + '° and ' + current.desc + '.');
+      if (wantsTomorrow) {
+        const tomorrow = forecast.find(d => d.label === 'Tomorrow') || forecast[1] || forecast[0];
+        if (tomorrow) chunks.push('**Tomorrow:** ' + tomorrow.desc + ', high ' + tomorrow.highF + '°, low ' + tomorrow.lowF + '°.');
+      }
+      if (wantsWeekly && forecast.length) {
+        const week = forecast.slice(0, 4).map(d => d.label + ': high ' + d.highF + '°, low ' + d.lowF + '°').join('. ');
+        chunks.push('**Week:** ' + week + '.');
+      }
+      if (!chunks.length && current) chunks.push('**Now:** ' + current.tempF + '° and ' + current.desc + '.');
+      return chunks.length ? chunks.join(' ') : null;
+    }
+
+    // ---------- chat ----------
+    function parseAction(text) {
+      const match = (text || '').match(/\[(ACTION:[^\]]+)\]/);
+      const action = match ? match[1] : null;
+      const clean = action ? text.replace(/\[ACTION:[^\]]+\]\s*/g, '').trim() : (text || '').trim();
+      return { text: clean, action };
+    }
+
+    async function handleUser(text, source = 'text') {
+      addLine('you', text);
+      const travelTarget = resolveTravelTarget(text);
+      if (travelTarget) {
+        const phrase = 'Flying to **' + travelTarget.name + '**.';
+        addLine('kyo', phrase);
+        speak(phrase.replace(/\*\*/g, ''));
+        showTravelScene(travelTarget);
         return;
       }
-      items.forEach(item => els.coreList.appendChild(renderCoreItem(item)));
-    }
-
-    function openCorePanel(view = 'today', results = null) {
-      activeCoreView = view;
-      activeCoreResults = results;
-      renderCorePanel();
-      els.coreScrim.classList.add('open');
-      els.corePanel.classList.add('open');
-      els.corePanel.setAttribute('aria-hidden', 'false');
-    }
-
-    function closeCorePanel() {
-      els.coreScrim.classList.remove('open');
-      els.corePanel.classList.remove('open');
-      els.corePanel.setAttribute('aria-hidden', 'true');
-    }
-
-    function toLocalInputValue(iso) {
-      if (!iso) return '';
-      const date = new Date(iso);
-      if (Number.isNaN(date.getTime())) return '';
-      const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-      return local.toISOString().slice(0, 16);
-    }
-
-    function openItemEditor(id) {
-      const item = coreStore.get(id);
-      if (!item) return;
-      els.itemEditId.value = item.id;
-      els.itemEditTitle.value = item.title;
-      els.itemEditType.value = item.type;
-      els.itemEditProject.value = item.project || '';
-      els.itemEditDue.value = toLocalInputValue(item.dueAt);
-      els.itemEditDetails.value = item.details || '';
-      els.editorScrim.classList.add('open');
-      els.itemEditor.classList.add('open');
-      setTimeout(() => els.itemEditTitle.focus(), 0);
-    }
-
-    function closeItemEditor() {
-      els.editorScrim.classList.remove('open');
-      els.itemEditor.classList.remove('open');
-      els.itemEditor.reset();
-    }
-
-    function describeCoreItems(items, emptyReply) {
-      if (!items.length) return emptyReply;
-      const first = items.slice(0, 3).map(item => item.title);
-      const extra = items.length > 3 ? ' Plus ' + (items.length - 3) + ' more.' : '';
-      return first.join('. ') + '.' + extra;
-    }
-
-    async function handleCoreCommand(text, source = 'text') {
-      const draft = parseCaptureIntent(text, new Date(), source);
-      if (draft) {
-        const item = coreStore.add(draft);
-        addCaptureCard(item);
-        const reply = 'Saved. ' + item.title + '.';
-        speak(reply);
-        return true;
+      if (isWeatherQuestion(text)) {
+        if (!state.location) {
+          addLine('kyo', 'I need location permission to check weather. Tap allow, then ask me again.');
+          speak('I need location permission to check weather.');
+          initLocation();
+          return;
+        }
+        setMode('thinking');
+        const ok = await refreshWeather();
+        setMode('idle');
+        const weather = weatherReplyFor(text);
+        if (weather) {
+          addLine('kyo', weather);
+          speak(weather.replace(/\*\*/g, ''));
+          return;
+        }
+        addLine('kyo', ok ? 'I have the forecast, but could not shape a clean answer.' : 'Weather data unavailable yet.');
+        speak(ok ? 'I have the forecast, but could not shape a clean answer.' : 'Weather data unavailable yet.');
+        return;
       }
 
-      const query = parseCoreQuery(text);
-      if (!query) return false;
-      const items = coreStore.list();
-
-      if (query.kind === 'mutation') {
-        const item = findBestItem(items, query.term);
-        if (!item) {
-          const reply = 'I could not find a saved item matching that.';
-          addLine('kyo', reply);
-          speak(reply);
-          return true;
-        }
-        if (query.action === 'delete') {
-          lastDeletedCoreItem = coreStore.remove(item.id);
-          els.coreUndo.hidden = !lastDeletedCoreItem;
-          const reply = 'Deleted ' + item.title + '.';
-          addLine('kyo', reply);
-          speak(reply);
-        } else {
-          const done = query.action === 'complete';
-          coreStore.update(item.id, {
-            status: done ? 'done' : 'open',
-            completedAt: done ? new Date().toISOString() : null
-          });
-          const reply = (done ? 'Completed ' : 'Reopened ') + item.title + '.';
-          addLine('kyo', reply);
-          speak(reply);
-        }
-        if (els.corePanel.classList.contains('open')) renderCorePanel();
-        return true;
+      if (!hasCloudSession()) {
+              addLine('kyo', 'Tap the gear and sign in with Google to use the Hermes relay.');
+              speak('Sign in with Google in settings.');
+              return;
+            }
+      state.messages.push({ role: 'user', content: text });
+      setMode('thinking');
+      try {
+        const raw = await sendToCloud();
+        const { text: reply, action } = parseAction(raw);
+        state.messages.push({ role: 'assistant', content: raw });
+        addLine('kyo', reply || raw);
+        speak(stripForTTS(reply || raw));
+        if (action) runAction(action);
+      } catch (e) {
+        setMode('idle');
+        const msg = (e && e.message) ? e.message : 'Something went wrong.';
+        addLine('kyo', 'Error: ' + msg);
+        speak('Something went wrong.');
       }
+    }
 
-      const results = queryCoreItems(items, query);
-      const view = query.view === 'search' ? 'search' : query.view;
-      openCorePanel(view, view === 'search' ? results : null);
-      const reply = view === 'today'
-        ? describeCoreItems(results, 'Nothing is due today.')
-        : view === 'inbox'
-          ? describeCoreItems(results, 'Your Inbox is clear.')
-          : describeCoreItems(results, 'I could not find anything matching that.');
-      addLine('kyo', reply);
-      speak(reply);
-      return true;
+    function stripForTTS(text) {
+      return text
+        .replace(/\*\*([^*]+)\*\*/g, '$1')
+        .replace(/\*([^*]+)\*/g, '$1')
+        .replace(/`[^`]+`/g, '')
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        .replace(/https?:\/\/\S+/g, '')
+        .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+        .replace(/\s+/g, ' ').trim();
+    }
+
+    async function sendToCloud() {
+          const body = {
+            model: state.model,
+            messages: [state.messages[0], liveContext(), ...state.messages.slice(1)],
+            max_tokens: 500,
+            temperature: 0.6
+          };
+          const data = await cloud.chat(body);
+          return String(data.reply || '').trim() || '…';
+        }
+
+    function runAction(action) {
+      if (!action) return;
+      const parts = action.split('|');
+      const cmd = parts[0];
+      const arg = parts.slice(1).join('|');
+      if (cmd === 'ACTION:OPEN_URL' && arg) {
+        window.open(arg, '_blank');
+      } else if (cmd === 'ACTION:SEARCH' && arg) {
+        window.open('https://www.google.com/search?q=' + encodeURIComponent(arg), '_blank');
+      } else if (cmd === 'ACTION:MAP' && arg) {
+        window.open('https://www.google.com/maps?q=' + encodeURIComponent(arg), '_blank');
+      }
     }
 
     function submitText(text) {
@@ -878,7 +765,6 @@
         ph: Math.random() * Math.PI * 2
       });
     }
-    // subtle day/night drift: 0 at 2pm local (day-warm peak), 1 at 2am local (night-ember peak)
     function nightMix() {
       const now = new Date();
       const h = now.getHours() + now.getMinutes() / 60;
@@ -898,9 +784,9 @@
       if (s === 'listening') S = 1.0;
       else if (s === 'thinking') S = 0.24;
       else if (s === 'speaking') S = 0.5 + Math.min(speakAmp, 34) / 40;
-      else S = 0.42 + Math.sin(coreTime * 0.4) * 0.05; // idle: slow breathing instead of a static spike
+      else S = 0.42 + Math.sin(coreTime * 0.4) * 0.05;
 
-      const nm = nightMix(); // 0 = daytime warm ember, 1 = deep-night cooled ember
+      const nm = nightMix();
       const glowRGB = [Math.round(lerp(255, 205, nm)), Math.round(lerp(140, 66, nm)), Math.round(lerp(66, 96, nm))];
       const spikeRGB = [Math.round(lerp(224, 150, nm)), Math.round(lerp(92, 48, nm)), Math.round(lerp(26, 78, nm))];
       const tipRGB   = [Math.round(lerp(255, 226, nm)), Math.round(lerp(201, 158, nm)), Math.round(lerp(163, 188, nm))];
@@ -937,7 +823,7 @@
     }
     coreFrame();
 
-    // ---------- mic corona (dense ember ring, kin to the core) ----------
+    // mic corona
     (function micCorona() {
       const cv = document.getElementById('mic-corona');
       const mcx = cv.getContext('2d');
@@ -977,769 +863,157 @@
       micFrame();
     })();
 
-    // ---------- settings ----------
-    function hasCloudSession() {
-      return !!(cloudState.ready && cloudState.user);
+    // ---------- voice ----------
+    let ambientTimer = null;
+    let synth = null;
+
+    function startAmbient() {
+      // Subtle ambient pulse can go here if desired
+    }
+    function stopAmbient() {
+      // No-op
     }
 
-    function updateCloudUI() {
-      if (!els.cloudCard) return;
-      const signedIn = hasCloudSession();
-      els.cloudCard.classList.toggle('ready', cloudState.ready);
-      els.cloudCard.classList.toggle('signed-in', signedIn);
-      els.legacyKeys.hidden = signedIn;
-      if (!cloudState.initialized) {
-        els.cloudStatusText.textContent = 'Checking secure cloud connection...';
-        els.cloudAuthBtn.hidden = true;
-      } else if (!cloudState.ready) {
-        els.cloudStatusText.textContent = 'Secure cloud is awaiting GitHub secrets. Local fallback remains active.';
-        els.cloudAuthBtn.hidden = true;
-      } else if (!cloudState.user) {
-        els.cloudStatusText.textContent = 'Secure cloud is ready. Sign in with the authorized Google account.';
-        els.cloudAuthBtn.textContent = 'Sign in with Google';
-        els.cloudAuthBtn.hidden = false;
-      } else {
-        els.cloudStatusText.textContent = 'Secure cloud connected as ' + cloudState.user.email + '.';
-        els.cloudAuthBtn.textContent = 'Sign out';
-        els.cloudAuthBtn.hidden = false;
-      }
-      els.settingsBtn.classList.toggle('flag', !signedIn && !state.apiKey);
-    }
-
-    function openSettings() {
-      els.apiKey.value = state.apiKey;
-      els.model.value = state.model;
-      els.elevenKey.value = state.elevenKey;
-      els.elevenVoice.value = state.elevenVoice;
-      els.handsFree.value = state.handsFree ? '1' : '0';
-      els.continuous.value = state.continuous ? '1' : '0';
-      updateCloudUI();
-      populateVoices();
-      els.scrim.classList.add('open');
-      els.sheet.classList.add('open');
-    }
-    function closeSettings() {
-      els.scrim.classList.remove('open');
-      els.sheet.classList.remove('open');
-    }
-    function saveSettings() {
-      state.apiKey = els.apiKey.value.trim();
-      state.model = els.model.value;
-      state.elevenKey = els.elevenKey.value.trim();
-      state.elevenVoice = els.elevenVoice.value.trim() || DEFAULT_ELEVEN_VOICE_ID;
-      state.voiceName = els.voiceSel.value;
-      const handsFreeWasOn = state.handsFree;
-      const continuousWasOn = state.continuous;
-      state.handsFree = els.handsFree.value === '1';
-      state.continuous = els.continuous.value === '1';
-      localStorage.setItem('kyo.apiKey', state.apiKey);
-      localStorage.setItem('kyo.model', state.model);
-      localStorage.setItem('kyo.elevenKey', state.elevenKey);
-      localStorage.setItem('kyo.elevenVoice', state.elevenVoice);
-      localStorage.setItem('kyo.voice', state.voiceName);
-      localStorage.setItem('kyo.handsFree', state.handsFree ? '1' : '0');
-      localStorage.setItem('kyo.continuous', state.continuous ? '1' : '0');
-      els.modelTag.textContent = state.model;
-      els.settingsBtn.classList.toggle('flag', !hasCloudSession() && !state.apiKey);
-      closeSettings();
-      if (state.handsFree && !handsFreeWasOn) {
-        const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!Ctor) {
-          showToast('this browser can\'t do hands-free listening');
-          state.handsFree = false;
-          localStorage.setItem('kyo.handsFree', '0');
-        } else {
-          showToast('hands-free on — say "hey winston"');
-        }
-      }
-      if (state.mode === 'idle') {
-        els.whisper.textContent = state.handsFree ? 'say "hey winston" — or tap' : WHISP.idle;
-        if (state.handsFree && !handsFreeWasOn) startAmbient();
-        if (!state.handsFree && handsFreeWasOn) stopAmbient();
-      }
-      if (state.continuous && !continuousWasOn) {
-        showToast('continuous mic on — Winston will reopen the mic after speaking');
-      }
-    }
-
-
-    function populateVoices() {
-      const voices = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
-      els.voiceSel.innerHTML = '';
-      const def = document.createElement('option');
-      def.value = ''; def.textContent = 'Browser default';
-      els.voiceSel.appendChild(def);
-      voices.forEach(v => {
-        const o = document.createElement('option');
-        o.value = v.name; o.textContent = v.name + ' — ' + v.lang;
-        els.voiceSel.appendChild(o);
-      });
-      els.voiceSel.value = state.voiceName || '';
-    }
-    if (window.speechSynthesis) speechSynthesis.onvoiceschanged = populateVoices;
-
-    function pickEnglishVoice(voices) {
-      const english = voices.find(v => /^en(?:[-_]|$)/i.test(v.lang || ''));
-      const stored = voices.find(v => v.name === state.voiceName);
-      if (stored && /^en(?:[-_]|$)/i.test(stored.lang || '')) return stored;
-      if (english) return english;
-      return stored || null;
-    }
-
-    // ---------- speech in ----------
-    function getRecognition() {
-      const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!Ctor) return null;
-      const r = new Ctor();
-      r.lang = 'en-US';
-      r.interimResults = false;
-      r.maxAlternatives = 1;
-      r.continuous = false;
-      return r;
-    }
-    function listen() {
-      if (state.listening) {
-        try { state.recognition && state.recognition.stop(); } catch (e) {}
+    function speak(text) {
+      if (!text || !text.trim()) return;
+      setMode('speaking');
+      if (hasCloudSession() && cloud.speak && state.elevenVoice) {
+        speakViaCloud(text);
         return;
       }
-      stopAmbient();
-      const rec = getRecognition();
-      if (!rec) {
-        setMode('idle', 'Voice not supported here');
-        addLine('kyo', "This browser can't listen. You can still type — or try Chrome.");
-        return;
-      }
-      state.recognition = rec;
-      state.listening = true;
-      setMode('listening');
-      rec.onresult = (ev) => {
-        const text = ev.results[0][0].transcript.trim();
-        state.listening = false;
-        if (!text) { setMode('idle'); return; }
-        handleUser(text, 'voice');
-      };
-      rec.onerror = (ev) => {
-        state.listening = false;
+      speakViaBrowser(text);
+    }
+
+    async function speakViaCloud(text) {
+      try {
+        const blob = await cloud.speak({ text: text.slice(0, 2500), voiceId: state.elevenVoice });
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        state.audio = audio;
+        audio.addEventListener('ended', () => {
+          setMode('idle');
+          URL.revokeObjectURL(url);
+          state.audio = null;
+          if (state.continuous && state.mode === 'idle') setTimeout(() => listen(), 400);
+        });
+        audio.play().catch(() => { setMode('idle'); });
+      } catch (e) {
         setMode('idle');
-        addLine('kyo', 'Mic error: ' + (ev.error || 'unknown') + '.');
-      };
-      rec.onend = () => {
-        state.listening = false;
-        if (state.mode === 'listening') setMode('idle');
-      };
-      try { rec.start(); } catch (e) {
-        state.listening = false; setMode('idle');
+        speakViaBrowser(text);
       }
+    }
+
+    function speakViaBrowser(text) {
+      if (!synth) synth = window.speechSynthesis;
+      synth.cancel();
+      const u = new SpeechSynthesisUtterance(text.slice(0, 250));
+      if (state.voiceName) u.voice = synth.getVoices().find(v => v.name === state.voiceName) || null;
+      u.rate = 0.92;
+      u.pitch = 1.05;
+      u.onend = () => {
+        setMode('idle');
+        if (state.continuous && state.mode === 'idle') setTimeout(() => listen(), 400);
+      };
+      u.onerror = () => setMode('idle');
+      synth.speak(u);
+    }
+
+    // ---------- speech recognition ----------
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+
+    function listen() {
+      if (!SpeechRecognition) {
+        showToast('Voice input is not supported in this browser.');
+        return;
+      }
+      if (state.mode === 'listening') {
+        stopListening();
+        return;
+      }
+      if (state.speaking || state.mode === 'speaking') return;
+      if (!recognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+        recognition.onresult = (e) => {
+          let final = '';
+          for (let i = e.resultIndex; i < e.results.length; i++) {
+            if (e.results[i].isFinal) final += e.results[i][0].transcript;
+          }
+          if (final) {
+            stopListening();
+            handleUser(final, 'voice');
+          }
+        };
+        recognition.onend = () => {
+          setMode('idle');
+          state.listening = false;
+        };
+        recognition.onerror = () => {
+          setMode('idle');
+          state.listening = false;
+        };
+      }
+      try {
+        recognition.start();
+        state.listening = true;
+        setMode('listening');
+      } catch (e) {
+        recognition = null;
+      }
+    }
+
+    function stopListening() {
+      if (recognition) {
+        try { recognition.stop(); } catch (e) {}
+      }
+      state.listening = false;
     }
 
     // ---------- hands-free wake word ----------
-    let ambientRec = null;
-    // cast a wide net for common mishearings of "Winston"
-    const WAKE_RE = /\b(hey|hay|ok(ay)?|hi|yo)?\s*(winston|weston|winsten|winson|whinston|winstone|whinson|winstin|windston)\b/i;
+    let wakeRecognition = null;
 
-    function stripWakeWord(t) {
-      const m = t.match(new RegExp(WAKE_RE.source + '[,:]?\\s*(.*)$', 'i'));
-      return m ? m[m.length - 1].trim() : '';
-    }
-
-    function startAmbient() {
-      if (!state.handsFree || ambientRec || state.mode !== 'idle' || state.listening) return;
-      const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!Ctor) return;
-      const r = new Ctor();
-      r.lang = 'en-US';
-      r.continuous = true;
-      r.interimResults = true;
-      r.maxAlternatives = 1;
-      ambientRec = r;
-      let triggered = false;
-      r.onresult = (ev) => {
-        if (triggered) return;
-        for (let i = ev.resultIndex; i < ev.results.length; i++) {
-          const res = ev.results[i];
-          const t = res[0].transcript.trim();
-          if (!t) continue;
-          if (WAKE_RE.test(t)) {
-            triggered = true;
-            const cmd = stripWakeWord(t);
-            stopAmbient();
-            if (cmd) handleUser(cmd, 'voice'); else listen();
-            return;
-          } else if (res.isFinal) {
-            // calibration aid: shows what it actually heard when the wake word didn't match
-            showToast('heard: "' + t.slice(0, 44) + '"');
+    function startWakeWord() {
+      if (!state.handsFree || !SpeechRecognition) return;
+      if (wakeRecognition) return;
+      wakeRecognition = new SpeechRecognition();
+      wakeRecognition.continuous = true;
+      wakeRecognition.interimResults = true;
+      wakeRecognition.lang = 'en-US';
+      wakeRecognition.onresult = (e) => {
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          if (e.results[i].isFinal) {
+            const text = e.results[i][0].transcript.toLowerCase().trim();
+            if (/\bhey winston\b/.test(text) || /\bhey Winston\b/.test(text)) {
+              const afterWake = text.replace(/\bhey winston\b/i, '').trim();
+              if (afterWake) {
+                handleUser(afterWake, 'voice');
+              } else {
+                listen();
+              }
+            }
           }
         }
       };
-      r.onerror = (ev) => {
-        if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
-          state.handsFree = false;
-          localStorage.setItem('kyo.handsFree', '0');
-          showToast('mic permission denied — hands-free off');
-        }
-        // 'no-speech' and similar fire constantly in ambient mode; ignore and let onend restart
-      };
-      r.onend = () => {
-        const wasThis = ambientRec === r;
-        ambientRec = null;
-        if (wasThis && state.handsFree && state.mode === 'idle' && !state.listening) {
-          setTimeout(startAmbient, 150);
-        }
-      };
-      try { r.start(); } catch (e) { ambientRec = null; }
+      wakeRecognition.onerror = () => { wakeRecognition = null; };
+      try { wakeRecognition.start(); } catch (e) { wakeRecognition = null; }
     }
 
-    function stopAmbient() {
-      if (!ambientRec) return;
-      const r = ambientRec;
-      ambientRec = null;
-      r.onend = null;
-      try { r.stop(); } catch (e) {}
-    }
-
-    // ---------- speech out ----------
-    async function speak(text) {
-      const elevenKey = state.elevenKey.trim();
-      const elevenVoice = state.elevenVoice.trim();
-      let blob = null;
-      if (hasCloudSession() && elevenVoice) {
-        try {
-          setMode('speaking');
-          blob = await cloud.speak({ text, voiceId: elevenVoice });
-        } catch (e) {
-          console.warn('Secure ElevenLabs TTS failed:', e);
-        }
-      }
-      if (!blob && !hasCloudSession() && elevenKey && elevenVoice) {
-        try {
-          setMode('speaking');
-          const res = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + encodeURIComponent(elevenVoice), {
-            method: 'POST',
-            headers: {
-              'xi-api-key': elevenKey,
-              'Content-Type': 'application/json',
-              'Accept': 'audio/mpeg'
-            },
-            body: JSON.stringify({
-              text,
-              model_id: 'eleven_multilingual_v2',
-              voice_settings: { stability: 0.45, similarity_boost: 0.8, style: 0.25, use_speaker_boost: true }
-            })
-          });
-          if (!res.ok) throw new Error('ElevenLabs ' + res.status);
-          blob = await res.blob();
-        } catch (e) {
-          console.warn('Legacy ElevenLabs TTS failed:', e);
-        }
-      }
-      if (blob) {
-        try {
-          if (state.audio) {
-            try { state.audio.pause(); } catch (e) {}
-            state.audio = null;
-          }
-          const url = URL.createObjectURL(blob);
-          const audio = new Audio(url);
-          state.audio = audio;
-          audio.onended = () => {
-            try { URL.revokeObjectURL(url); } catch (e) {}
-            if (state.audio === audio) state.audio = null;
-            handleReplyComplete();
-          };
-          audio.onerror = () => {
-            try { URL.revokeObjectURL(url); } catch (e) {}
-            if (state.audio === audio) state.audio = null;
-            handleReplyComplete();
-            fallbackSpeak(text);
-          };
-          await audio.play();
-          return;
-        } catch (e) {
-          console.warn('Audio playback failed, falling back to browser voice:', e);
-        }
-      }
-      fallbackSpeak(text);
-    }
-
-    let micReopenTimer = null;
-    function queueMicReopen() {
-      clearTimeout(micReopenTimer);
-      micReopenTimer = setTimeout(() => {
-        if (!state.continuous) return;
-        if (state.mode !== 'idle') return;
-        if (state.handsFree) {
-          startAmbient();
-          return;
-        }
-        listen();
-      }, 450);
-    }
-
-    function handleReplyComplete() {
-      setMode('idle');
-      if (state.continuous) queueMicReopen();
-    }
-
-    function fallbackSpeak(text) {
-      if (!('speechSynthesis' in window)) { setMode('idle'); handleReplyComplete(); return; }
-      try { speechSynthesis.cancel(); } catch (e) {}
-      const utt = new SpeechSynthesisUtterance(text);
-      utt.lang = 'en-US';
-      const voices = speechSynthesis.getVoices() || [];
-      const v = pickEnglishVoice(voices);
-      if (v) utt.voice = v;
-      utt.rate = 1.02;
-      utt.pitch = 1.0;
-      utt.onstart = () => setMode('speaking');
-      utt.onend   = () => handleReplyComplete();
-      utt.onerror = () => handleReplyComplete();
-      state.speaking = true;
-      speechSynthesis.speak(utt);
-    }
-
-    // ---------- actions ----------
-    let toastTimer = null;
-    function showToast(text) {
-      els.toastText.textContent = text;
-      els.toast.classList.add('show');
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => els.toast.classList.remove('show'), 3200);
-    }
-
-    function openWithAppFallback(appUrl, webUrl) {
-      let hidden = false;
-      const onHide = () => { if (document.hidden) hidden = true; };
-      document.addEventListener('visibilitychange', onHide);
-      const before = Date.now();
-      window.location.href = appUrl;
-      setTimeout(() => {
-        document.removeEventListener('visibilitychange', onHide);
-        // if the tab never lost focus (or barely did), the app scheme didn't catch — fall back to web
-        if (!hidden && Date.now() - before < 1600) {
-          window.open(webUrl, '_blank', 'noopener');
-        }
-      }, 900);
-    }
-
-    function parseAction(reply) {
-      const m = reply.match(/\[ACTION:(OPEN_URL|SEARCH|MAP)\|([^\]]+)\]\s*$/i);
-      if (!m) return { text: reply, action: null };
-      const text = reply.slice(0, m.index).trim();
-      return { text, action: { type: m[1].toUpperCase(), payload: m[2].trim() } };
-    }
-
-    function runAction(action) {
-      if (!action) return;
-      try {
-        if (action.type === 'OPEN_URL') {
-          let url = action.payload;
-          if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
-          showToast('opening ' + new URL(url).hostname.replace(/^www\./, ''));
-          window.open(url, '_blank', 'noopener');
-        } else if (action.type === 'SEARCH') {
-          showToast('searching — ' + action.payload);
-          window.open('https://www.google.com/search?q=' + encodeURIComponent(action.payload), '_blank', 'noopener');
-        } else if (action.type === 'MAP') {
-          showToast('opening map — ' + action.payload);
-          const p = action.payload;
-          const toMatch = p.match(/^from\s+(.+?)\s+to\s+(.+)$/i);
-          const webUrl = toMatch
-            ? 'https://www.google.com/maps/dir/?api=1&origin=' + encodeURIComponent(toMatch[1]) + '&destination=' + encodeURIComponent(toMatch[2])
-            : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(p);
-          const appUrl = toMatch
-            ? 'comgooglemaps://?saddr=' + encodeURIComponent(toMatch[1]) + '&daddr=' + encodeURIComponent(toMatch[2]) + '&directionsmode=driving'
-            : 'comgooglemaps://?q=' + encodeURIComponent(p);
-          openWithAppFallback(appUrl, webUrl);
-        }
-      } catch (e) {
-        console.warn('action failed', e);
-      }
-    }
-
-    // ---------- travel ----------
-    function easeInOutCubic(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
-    function clamp01(n) { return Math.max(0, Math.min(1, n)); }
-    function greatCirclePoint(a, b, t) {
-      const ax = a.x, ay = a.y, az = a.z;
-      const bx = b.x, by = b.y, bz = b.z;
-      const dot = Math.max(-1, Math.min(1, ax * bx + ay * by + az * bz));
-      const omega = Math.acos(dot);
-      if (omega < 1e-5) return { x: ax, y: ay, z: az };
-      const so = Math.sin(omega);
-      const s1 = Math.sin((1 - t) * omega) / so;
-      const s2 = Math.sin(t * omega) / so;
-      return { x: ax * s1 + bx * s2, y: ay * s1 + by * s2, z: az * s1 + bz * s2 };
-    }
-    function latLonToVec(lat, lon) {
-      const la = lat * Math.PI / 180;
-      const lo = lon * Math.PI / 180;
-      return { x: Math.cos(la) * Math.cos(lo), y: Math.sin(la), z: Math.cos(la) * Math.sin(lo) };
-    }
-    function vecToXY(vec, cx, cy, r, spin) {
-      const lon = Math.atan2(vec.z, vec.x) + spin;
-      const lat = Math.asin(vec.y);
-      return { x: cx + Math.cos(lat) * Math.cos(lon) * r, y: cy - Math.sin(lat) * r * 0.84, lat, lon };
-    }
-    function drawTravelFrame(ctx, w, h, origin, target, progress) {
-      const cx = w / 2, cy = h / 2;
-      const fade = 1 - Math.pow(progress, 0.8);
-      ctx.clearRect(0, 0, w, h);
-      const bg = ctx.createRadialGradient(cx, cy * 0.92, 40, cx, cy, Math.max(w, h) * 0.72);
-      bg.addColorStop(0, 'rgba(32,72,122,0.55)');
-      bg.addColorStop(0.45, 'rgba(7,15,28,0.9)');
-      bg.addColorStop(1, 'rgba(1,4,9,1)');
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, w, h);
-      for (let i = 0; i < 140; i++) {
-        const x = (i * 97.3 + progress * 190) % w;
-        const y = (i * 53.1 + progress * 47) % h;
-        const a = 0.04 + ((i % 5) * 0.01);
-        ctx.fillStyle = 'rgba(190,235,255,' + a.toFixed(3) + ')';
-        ctx.fillRect(x, y, 2, 2);
-      }
-      const radius = Math.min(w, h) * (0.30 + 0.06 * Math.sin(progress * Math.PI));
-      const globeY = cy + Math.sin(progress * Math.PI * 0.8) * 10;
-      const spin = progress * Math.PI * 1.35;
-      ctx.save();
-      ctx.translate(cx, globeY);
-      const glow = ctx.createRadialGradient(0, 0, radius * 0.2, 0, 0, radius * 1.18);
-      glow.addColorStop(0, 'rgba(92,182,255,0.16)');
-      glow.addColorStop(0.65, 'rgba(60,110,180,0.08)');
-      glow.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = glow;
-      ctx.beginPath();
-      ctx.arc(0, 0, radius * 1.05, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(0, 0, radius, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(11,22,33,0.95)';
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(142,214,255,0.22)';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.save();
-      ctx.clip();
-      ctx.strokeStyle = 'rgba(124,198,245,0.15)';
-      ctx.lineWidth = 1;
-      for (let i = -3; i <= 3; i++) {
-        const lat = (i / 4) * Math.PI * 0.92;
-        ctx.beginPath();
-        for (let j = 0; j <= 160; j++) {
-          const lon = (j / 160) * Math.PI * 2 - Math.PI;
-          const x = Math.cos(lat) * Math.cos(lon + spin) * radius;
-          const y = Math.sin(lat) * radius * 0.84;
-          if (j === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-      }
-      for (let i = -4; i <= 4; i++) {
-        const lon = (i / 4) * Math.PI * 0.98;
-        ctx.beginPath();
-        for (let j = 0; j <= 120; j++) {
-          const lat = (j / 120) * Math.PI - Math.PI / 2;
-          const x = Math.cos(lat) * Math.cos(lon + spin) * radius;
-          const y = Math.sin(lat) * radius * 0.84;
-          if (j === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-      }
-      ctx.restore();
-      const o = vecToXY(latLonToVec(origin.lat, origin.lon), cx, globeY, radius, spin);
-      const t = vecToXY(latLonToVec(target.lat, target.lon), cx, globeY, radius, spin);
-      const route = greatCirclePoint(latLonToVec(origin.lat, origin.lon), latLonToVec(target.lat, target.lon), clamp01(progress));
-      const m = vecToXY(route, cx, globeY, radius, spin);
-      ctx.strokeStyle = 'rgba(115,214,255,' + (0.18 + 0.22 * fade).toFixed(3) + ')';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(o.x, o.y);
-      ctx.quadraticCurveTo(cx, globeY - radius * 1.1, t.x, t.y);
-      ctx.stroke();
-      const pulse = 5 + 10 * (1 - progress);
-      ctx.fillStyle = 'rgba(141,220,255,0.95)';
-      ctx.beginPath();
-      ctx.arc(o.x, o.y, 4.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(141,220,255,0.45)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(o.x, o.y, pulse * 0.6, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.fillStyle = 'rgba(255,255,255,0.92)';
-      ctx.beginPath();
-      ctx.arc(m.x, m.y, 3.4, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = 'rgba(173,236,255,' + (0.72 + 0.2 * fade).toFixed(3) + ')';
-      ctx.beginPath();
-      ctx.arc(t.x, t.y, 4.8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(173,236,255,0.38)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(t.x, t.y, 9 + 8 * (1 - progress), 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.fillStyle = 'rgba(232,246,255,' + (0.9 * fade + 0.1).toFixed(3) + ')';
-      ctx.font = '600 ' + Math.max(12, Math.round(w * 0.016)) + 'px Inter, system-ui, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(progress < 0.65 ? 'flying over the globe…' : 'locking onto target…', cx, globeY + radius + 30);
-      ctx.restore();
-    }
+    // ---------- travel fly-to ----------
     function showTravelScene(target) {
-      if (!els.travel) return false;
-      if (state.travel && state.travel.raf) cancelAnimationFrame(state.travel.raf);
-      if (state.travel && state.travel.hideTimer) clearTimeout(state.travel.hideTimer);
-      const origin = state.location || DEFAULT_HOME;
-      const canvas = els.travelCanvas;
-      const ctx = canvas.getContext('2d');
-      const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
-      function resize() {
-        const rect = canvas.getBoundingClientRect();
-        canvas.width = Math.round(rect.width * dpr);
-        canvas.height = Math.round(rect.height * dpr);
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      }
-      const stateBag = { raf: 0, hideTimer: 0, active: true };
-      state.travel = stateBag;
       els.travelTitle.textContent = target.name;
-      els.travelSub.textContent = 'Starting from your current position and flying to ' + target.name + '.';
+      els.travelSub.textContent = 'Locking onto ' + target.name + '.';
       els.travelChiprow.innerHTML = '';
-      (target.chips || []).forEach((chip) => {
-        const span = document.createElement('span');
-        span.className = 'travel-chip';
-        span.textContent = chip;
-        els.travelChiprow.appendChild(span);
+      (target.chips || []).forEach(c => {
+        const chip = document.createElement('span');
+        chip.className = 'travel-chip';
+        chip.textContent = c;
+        els.travelChiprow.appendChild(chip);
       });
       els.travel.classList.add('show');
-      resize();
-      window.addEventListener('resize', resize, { passive: true });
-      setMode('thinking', '<b>Winston</b> is flying to ' + target.name + '…');
-      const start = performance.now();
-      const duration = 4300;
-      const loop = (now) => {
-        const progress = clamp01((now - start) / duration);
-        drawTravelFrame(ctx, canvas.width / dpr, canvas.height / dpr, origin, target, easeInOutCubic(progress));
-        if (progress < 1 && stateBag.active) {
-          stateBag.raf = requestAnimationFrame(loop);
-        } else {
-          stateBag.active = false;
-        }
-      };
-      stateBag.raf = requestAnimationFrame(loop);
-      stateBag.hideTimer = setTimeout(() => {
-        stateBag.active = false;
-        cancelAnimationFrame(stateBag.raf);
-        els.travel.classList.remove('show');
-        window.removeEventListener('resize', resize);
-        setMode('idle');
-      }, duration + 250);
-      window.__kyoTestFlyTo = (name) => {
-        const resolved = resolveTravelTarget(name);
-        if (resolved) return showTravelScene(resolved);
-        return false;
-      };
-      window.flyToPreset = window.__kyoTestFlyTo;
-      return true;
-    }
-    // ---------- weather ----------
-    const WEATHER_CODES = {
-      0: 'clear sky', 1: 'mostly clear', 2: 'partly cloudy', 3: 'overcast',
-      45: 'foggy', 48: 'freezing fog',
-      51: 'light drizzle', 53: 'drizzle', 55: 'heavy drizzle',
-      61: 'light rain', 63: 'rain', 65: 'heavy rain',
-      66: 'freezing rain', 67: 'heavy freezing rain',
-      71: 'light snow', 73: 'snow', 75: 'heavy snow', 77: 'snow grains',
-      80: 'light showers', 81: 'showers', 82: 'violent showers',
-      85: 'snow showers', 86: 'heavy snow showers',
-      95: 'thunderstorms', 96: 'thunderstorms with hail', 99: 'severe thunderstorms with hail'
-    };
-
-    function initLocation() {
-      if (!navigator.geolocation) return;
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          state.location = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-          refreshWeather();
-        },
-        () => {},
-        { maximumAge: 10 * 60 * 1000, timeout: 8000 }
-      );
-    }
-
-    async function refreshWeather() {
-      if (!state.location) return false;
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 5000);
-      try {
-        const { lat, lon } = state.location;
-        const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon +
-          '&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&forecast_days=7&temperature_unit=fahrenheit&timezone=auto';
-        const res = await fetch(url, { signal: controller.signal });
-        if (!res.ok) return false;
-        const data = await res.json();
-        if (!data.current) return false;
-        state.weather = {
-          tempF: Math.round(data.current.temperature_2m),
-          desc: WEATHER_CODES[data.current.weather_code] || 'unclear skies',
-          fetchedAt: Date.now()
-        };
-        const daily = data.daily || {};
-        const dates = daily.time || [];
-        const maxs = daily.temperature_2m_max || [];
-        const mins = daily.temperature_2m_min || [];
-        const codes = daily.weather_code || [];
-        state.forecast = dates.slice(0, 7).map((day, idx) => ({
-          label: idx === 0 ? 'Today' : idx === 1 ? 'Tomorrow' : new Date(day + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' }),
-          highF: Math.round(maxs[idx]),
-          lowF: Math.round(mins[idx]),
-          desc: WEATHER_CODES[codes[idx]] || 'unclear skies'
-        })).filter(item => Number.isFinite(item.highF) && Number.isFinite(item.lowF));
-        return true;
-      } catch (e) {
-        return false;
-      } finally {
-        clearTimeout(timer);
-      }
-    }
-
-    function liveContext() {
-      const now = new Date();
-      const parts = [
-        'Live system note — current local date/time: ' +
-        now.toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + '.'
-      ];
-      if (state.weather && (Date.now() - state.weather.fetchedAt) < 30 * 60 * 1000) {
-        parts.push('Current local weather: ' + state.weather.tempF + '°F, ' + state.weather.desc + '.');
-      }
-      if (state.forecast && state.forecast.length) {
-        const tomorrow = state.forecast[1];
-        const dayAfter = state.forecast[2];
-        if (tomorrow) parts.push('Tomorrow forecast: ' + tomorrow.label + ', high ' + tomorrow.highF + '°F, low ' + tomorrow.lowF + '°F.');
-        if (dayAfter) parts.push('Day after tomorrow forecast: ' + dayAfter.label + ', high ' + dayAfter.highF + '°F, low ' + dayAfter.lowF + '°F.');
-      }
-      parts.push('If the user asks for weather beyond the live snapshot, explain the best available forecast and be explicit when it is for tomorrow or the day after tomorrow.');
-      return { role: 'system', content: parts.join(' ') };
-    }
-
-    function isWeatherQuestion(text) {
-      return /\b(weather|forecast|rain|snow|temperature|temp|degree|degrees|hot|cold|warm|cool|humid|windy|outside|outside\s+like|feels?\s+like|precipitation|rain\s+chance)\b/i.test(text);
-    }
-
-    function weatherReplyFor(text) {
-      const wantsTomorrow = /\btomorrow\b/i.test(text);
-      const wantsDaily = /\bdaily\b/i.test(text) || /\btoday\b/i.test(text) || /\btonight\b/i.test(text);
-      const wantsWeekly = /\bweekly\b/i.test(text) || /\bweek\b/i.test(text) || /\bthis\s+week\b/i.test(text) || /\bnext\s+week\b/i.test(text) || /\bweekend\b/i.test(text);
-      const current = state.weather;
-      const forecast = state.forecast || [];
-      if (!current && !forecast.length) return null;
-
-      const chunks = [];
-      if (wantsDaily && current) chunks.push('Today: ' + current.tempF + '° and ' + current.desc + '.');
-      if (wantsTomorrow) {
-        const tomorrow = forecast.find(d => d.label === 'Tomorrow') || forecast[1] || forecast[0];
-        if (tomorrow) chunks.push('Tomorrow: ' + tomorrow.desc + ', high ' + tomorrow.highF + '°, low ' + tomorrow.lowF + '°.');
-      }
-      if (wantsWeekly && forecast.length) {
-        const week = forecast.slice(0, 4).map(d => d.label + ': high ' + d.highF + '°, low ' + d.lowF + '°').join('. ');
-        chunks.push('Week: ' + week + '.');
-      }
-      if (!chunks.length && current) chunks.push('Now: ' + current.tempF + '° and ' + current.desc + '.');
-      return chunks.length ? chunks.join(' ') : null;
-    }
-
-    function weatherSpeakFor(text) {
-      return (text || '')
-        .replace(/\b(\d+)°/g, '$1')
-        .replace(/high\s+(\d+)\s*,\s*low\s+(\d+)/gi, 'high $1, low $2')
-        .replace(/\bdegrees?\b/gi, '')
-        .replace(/\s+/g, ' ')
-        .trim();
-    }
-
-    // ---------- chat ----------
-    async function handleUser(text, source = 'text') {
-      addLine('you', text);
-      if (await handleCoreCommand(text, source)) return;
-      const travelTarget = resolveTravelTarget(text);
-      if (travelTarget) {
-        const phrase = 'Flying to ' + travelTarget.name + '.';
-        addLine('kyo', phrase);
-        speak(phrase);
-        showTravelScene(travelTarget);
-        return;
-      }
-      if (isWeatherQuestion(text)) {
-        if (!state.location) {
-          addLine('kyo', 'I need location permission to check weather. Tap allow, then ask me again.');
-          speak('I need location permission to check weather.');
-          initLocation();
-          return;
-        }
-        setMode('thinking');
-        const ok = await refreshWeather();
-        setMode('idle');
-        const weather = weatherReplyFor(text);
-        if (weather) {
-          addLine('kyo', weather);
-          speak(weatherSpeakFor(weather));
-          return;
-        }
-        addLine('kyo', ok ? 'I have the forecast, but I could not shape a clean answer.' : 'I still do not have enough weather data yet.');
-        speak(ok ? 'I have the forecast, but I could not shape a clean answer.' : 'I still do not have enough weather data yet.');
-        return;
-      }
-
-      if (!hasCloudSession() && !state.apiKey) {
-        const cloudReady = cloudState.ready;
-        addLine('kyo', cloudReady
-          ? 'Secure cloud is ready. Tap the gear and sign in with Google first.'
-          : 'AI chat is waiting for secure cloud setup. You can still use tasks, notes, reminders, weather, and the temporary local-key fallback in Settings.');
-        speak(cloudReady ? 'Sign in with Google in settings.' : 'Secure AI chat is not configured yet.');
-        return;
-      }
-      state.messages.push({ role: 'user', content: text });
-      setMode('thinking');
-      try {
-        const raw = await callOpenRouter();
-        const { text: reply, action } = parseAction(raw);
-        state.messages.push({ role: 'assistant', content: raw });
-        addLine('kyo', reply || raw);
-        speak(reply || raw);
-        if (action) runAction(action);
-      } catch (e) {
-        setMode('idle');
-        const msg = (e && e.message) ? e.message : 'Something went wrong.';
-        addLine('kyo', 'Error: ' + msg);
-        speak('Something went wrong.');
-      }
-    }
-
-    async function callOpenRouter() {
-      const body = {
-        model: state.model,
-        messages: [state.messages[0], liveContext(), ...state.messages.slice(1)],
-        max_tokens: 220,
-        temperature: 0.6
-      };
-      if (hasCloudSession()) {
-        const data = await cloud.chat(body);
-        return String(data.reply || '').trim() || '…';
-      }
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + state.apiKey,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': location.origin,
-          'X-Title': 'Winston'
-        },
-        body: JSON.stringify(body)
-      });
-      if (!res.ok) {
-        const t = await res.text().catch(() => '');
-        throw new Error('OpenRouter ' + res.status + ': ' + t.slice(0, 160));
-      }
-      const data = await res.json();
-      const reply = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
-      return reply.trim() || '…';
+      setTimeout(() => els.travel.classList.remove('show'), 3200);
     }
 
     // ---------- events ----------
@@ -1767,130 +1041,19 @@
         updateCloudUI();
       }
     });
-    els.todayBtn.addEventListener('click', () => openCorePanel('today'));
-    els.inboxBtn.addEventListener('click', () => openCorePanel('inbox'));
-    els.coreClose.addEventListener('click', closeCorePanel);
-    els.coreScrim.addEventListener('click', closeCorePanel);
-    els.editorScrim.addEventListener('click', closeItemEditor);
-    els.itemEditCancel.addEventListener('click', closeItemEditor);
 
-    els.transcript.addEventListener('click', (event) => {
-      const button = event.target.closest('button[data-action]');
-      if (!button) return;
-      const id = button.dataset.id;
-      if (button.dataset.action === 'capture-edit') {
-        openItemEditor(id);
-        return;
-      }
-      if (button.dataset.action === 'capture-undo') {
-        const removed = coreStore.remove(id);
-        if (!removed) return;
-        const card = button.closest('.capture-card');
-        card.classList.add('removed');
-        card.querySelector('.capture-kicker').textContent = 'Save undone';
-        card.querySelector('.capture-meta').textContent = 'Removed from Winston';
-        card.querySelector('.capture-actions').remove();
-        showToast('save undone');
-      }
-    });
-
-    els.coreList.addEventListener('click', (event) => {
-      const button = event.target.closest('button[data-action]');
-      if (!button) return;
-      const id = button.dataset.id;
-      const item = coreStore.get(id);
-      if (!item) return;
-      if (button.dataset.action === 'edit') {
-        openItemEditor(id);
-        return;
-      }
-      if (button.dataset.action === 'delete') {
-        lastDeletedCoreItem = coreStore.remove(id);
-        els.coreUndo.hidden = !lastDeletedCoreItem;
-        showToast('deleted — undo is available');
-      } else {
-        const done = button.dataset.action === 'complete';
-        coreStore.update(id, {
-          status: done ? 'done' : 'open',
-          completedAt: done ? new Date().toISOString() : null
-        });
-        showToast(done ? 'marked complete' : 'reopened');
-      }
-      if (activeCoreView === 'search') {
-        activeCoreResults = (activeCoreResults || []).map(result => coreStore.get(result.id)).filter(Boolean);
-      }
-      renderCorePanel();
-    });
-
-    els.coreUndo.addEventListener('click', () => {
-      if (!lastDeletedCoreItem) return;
-      coreStore.restore(lastDeletedCoreItem);
-      lastDeletedCoreItem = null;
-      els.coreUndo.hidden = true;
-      renderCorePanel();
-      showToast('item restored');
-    });
-
-    els.itemEditor.addEventListener('submit', (event) => {
-      event.preventDefault();
-      const id = els.itemEditId.value;
-      const dueAt = els.itemEditDue.value ? new Date(els.itemEditDue.value).toISOString() : null;
-      const updated = coreStore.update(id, {
-        title: els.itemEditTitle.value.trim(),
-        type: els.itemEditType.value,
-        project: els.itemEditProject.value.trim(),
-        dueAt,
-        details: els.itemEditDetails.value.trim()
-      });
-      if (!updated) return;
-      els.transcript.querySelectorAll('.capture-card').forEach(card => {
-        if (card.dataset.itemId !== id || card.classList.contains('removed')) return;
-        card.querySelector('.capture-title').textContent = updated.title;
-        card.querySelector('.capture-meta').textContent = coreMeta(updated) || 'Saved to Inbox';
-      });
-      if (activeCoreView === 'search') {
-        activeCoreResults = (activeCoreResults || []).map(result => result.id === id ? updated : result);
-      }
-      closeItemEditor();
-      if (els.corePanel.classList.contains('open')) renderCorePanel();
-      showToast('item updated');
-    });
-
-    document.addEventListener('keydown', (event) => {
-      if (event.key !== 'Escape') return;
-      if (els.itemEditor.classList.contains('open')) closeItemEditor();
-      else if (els.corePanel.classList.contains('open')) closeCorePanel();
-    });
-
-    coreStore.subscribe(updateCoreCounts);
-
-    // ---------- boot ----------
-    function timeGreeting() {
-      const h = new Date().getHours();
-      const part = h < 5 ? 'evening' : h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening';
-      const address = Math.random() < 0.5 ? 'Fedirino' : 'Sir';
-      return 'Good ' + part + ', ' + address + '. How can I help?';
-    }
-    addLine('kyo', timeGreeting());
-    if (!coreStore.list().length) {
-      addLine('kyo', 'I can save tasks, notes, and reminders now. Try “remind me Friday at 7 AM…”');
-    }
+    // ---------- ambient init ----------
     initLocation();
-    updateCoreCounts();
-    els.modelTag.textContent = state.model;
-    els.verTag.textContent = 'Winston v' + APP_VERSION;
-    setMode('idle');
-    updateCloudUI();
-    cloud.init().catch((error) => {
-      console.warn('Secure cloud initialization failed:', error);
-      updateCloudUI();
+    cloud.init().then(() => {
+      if (cloudState.ready && hasCloudSession()) {
+        refreshWeather();
+      }
     });
+    els.chatInput && els.chatInput.focus();
+    els.verTag.textContent = 'Winston v' + APP_VERSION;
 
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js').catch(() => {});
-      });
-    }
+    // ---------- startup ----------
+    setTimeout(() => startWakeWord(), 2000);
   </script>
 </body>
 </html>

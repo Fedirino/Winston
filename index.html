@@ -389,16 +389,19 @@
       const APP_VERSION = '0.9.0';
     const DEFAULT_ELEVEN_VOICE_ID = 'goT3UYdM9bhm0n2lmKQx';
 
-    // ---------- state ----------
-    const state = {
-              model: localStorage.getItem('kyo.model') || 'xiaomi/mimo-v2.5',
-              voiceName: localStorage.getItem('kyo.voice') || '',
-              elevenVoice: localStorage.getItem('kyo.elevenVoice') || DEFAULT_ELEVEN_VOICE_ID,
-              handsFree: localStorage.getItem('kyo.handsFree') === '1',
-              continuous: localStorage.getItem('kyo.continuous') === '1',
-              persona: localStorage.getItem('kyo.persona') || 'winston',
-          mode: 'idle',
-                              messages: [{ role: 'system', content: kyoSystemPrompt() }],
+        // Read initial persona before state construction to avoid TDZ issues
+        const initPersona = localStorage.getItem('kyo.persona') || 'winston';
+
+        // ---------- state ----------
+        const state = {
+                  model: localStorage.getItem('kyo.model') || 'xiaomi/mimo-v2.5',
+                  voiceName: localStorage.getItem('kyo.voice') || '',
+                  elevenVoice: localStorage.getItem('kyo.elevenVoice') || DEFAULT_ELEVEN_VOICE_ID,
+                  handsFree: localStorage.getItem('kyo.handsFree') === '1',
+                  continuous: localStorage.getItem('kyo.continuous') === '1',
+                  persona: initPersona,
+              mode: 'idle',
+                                  messages: [{ role: 'system', content: kyoSystemPrompt(initPersona) }],
                     listening: false,
                     recognition: null,
                     speaking: false,
@@ -418,8 +421,9 @@
       }
     });
 
-    function kyoSystemPrompt() {
-          if (state.persona === 'signal-ghost') return signalGhostSystemPrompt();
+    function kyoSystemPrompt(pers) {
+          pers = pers || state?.persona || 'winston';
+          if (pers === 'signal-ghost') return signalGhostSystemPrompt();
           return [
             "You are Winston — a calm, capable AI assistant running on the Hermes agent.",
             "Voice: composed, precise, quietly warm. Think a trusted ship's computer with good manners: confident, never theatrical.",

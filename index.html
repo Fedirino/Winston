@@ -538,29 +538,35 @@
     }
 
     async function handleUser(text, source = 'text') {
-          addLine('you', text);
+              addLine('you', text);
 
-          if (!hasCloudSession()) {
-            addLine('kyo', 'Tap the gear and sign in with Google to use the Hermes relay.');
-            speak('Sign in with Google in settings.');
-            return;
-          }
-          state.messages.push({ role: 'user', content: text });
-          setMode('thinking');
-          try {
-            const raw = await sendToCloud();
-            const { text: reply, action } = parseAction(raw);
-            state.messages.push({ role: 'assistant', content: raw });
-            addLine('kyo', reply || raw);
-            speak(stripForTTS(reply || raw));
-            if (action) runAction(action);
-          } catch (e) {
-            setMode('idle');
-            const msg = (e && e.message) ? e.message : 'Something went wrong.';
-            addLine('kyo', 'Error: ' + msg);
-            speak('Something went wrong.');
-          }
-        }
+              if (!hasCloudSession()) {
+                addLine('kyo', 'Tap the gear and sign in with Google to use the Hermes relay.');
+                speak('Sign in with Google in settings.');
+                return;
+              }
+              state.messages.push({ role: 'user', content: text });
+              setMode('thinking');
+              try {
+                const data = await sendToCloud();
+                const raw = data.reply || '';
+                const toolCalls = data.tool_calls || [];
+                const { text: reply, action } = parseAction(raw);
+                state.messages.push({ role: 'assistant', content: raw });
+                // Render tool call cards before the reply
+                for (const tc of toolCalls) {
+                  els.transcript.appendChild(renderToolCallCard(tc));
+                }
+                addLine('kyo', reply || raw);
+                speak(stripForTTS(reply || raw));
+                if (action) runAction(action);
+              } catch (e) {
+                setMode('idle');
+                const msg = (e && e.message) ? e.message : 'Something went wrong.';
+                addLine('kyo', 'Error: ' + msg);
+                speak('Something went wrong.');
+              }
+            }
 
     function stripForTTS(text) {
           return text
@@ -759,15 +765,15 @@
         }
 
     async function sendToCloud() {
-          const body = {
-            model: state.model,
-            messages: [state.messages[0], liveContext(), ...state.messages.slice(1)],
-            max_tokens: 500,
-            temperature: 0.6
-          };
-          const data = await cloud.chat(body);
-          return String(data.reply || '').trim() || '…';
-        }
+              const body = {
+                model: state.model,
+                messages: [state.messages[0], liveContext(), ...state.messages.slice(1)],
+                max_tokens: 500,
+                temperature: 0.6
+              };
+              const data = await cloud.chat(body);
+              return { reply: String(data.reply || '').trim() || '…', tool_calls: data.tool_calls || [] };
+            }
 
     function runAction(action) {
       if (!action) return;

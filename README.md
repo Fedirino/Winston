@@ -1,33 +1,71 @@
 # Winston
 
-Voice-first personal organizer and AI companion. (Formerly "Kyo" — renamed for easier voice/wake-word recognition.)
+Voice-first AI assistant — a public PWA that routes speech and text through a secure cloud relay to a private Hermes Agent backend.
 
-## Useful core
+> Formerly "Kyo". Renamed for easier voice/wake-word recognition.
 
-Winston can save tasks, notes, and reminders locally without an API key. Try:
+## Architecture
 
-- `Remind me Friday at 7 AM to review the strawberry order for PDP`
-- `Save this idea under Clip Forge: automate title variants`
-- `What do I need to do today?`
-- `Show my PDP reminders`
-- `Mark the strawberry review complete`
+```
+Browser / PWA (kyo-os.web.app)
+     |
+     v
+Firebase Function (auth + relay)
+     |  Authenticates caller via Google sign-in
+     |  Proxies requests through Cloudflare Zero Trust tunnel
+     v
+Hermes Agent (localhost:8642)
+     |  OpenRouter-backed LLM reasoning
+     |  ElevenLabs TTS via Hermes speech provider
+     |  Local tools, cron, memory
+```
 
-Use the Today and Inbox buttons to edit, complete, reopen, delete, or restore saved items. Items persist in this browser.
+The browser never holds an API key. Every request is authenticated by Firebase Auth, relayed through a Firebase Function, tunneled over Cloudflare, and delivered to Hermes running on a local machine. Provider keys live in Google Secret Manager, not client-side code.
 
-## Secure cloud setup
+## Features
 
-AI chat and ElevenLabs speech can run through an authenticated Firebase Function so provider keys never reach the browser. Add these as GitHub repository **Actions secrets**:
+- **Voice-first input** — speech-to-text via the Web Speech API, text via keyboard
+- **Hermes-backed AI** — full reasoning, tool use, memory, and scheduled tasks via Hermes Agent
+- **ElevenLabs TTS** — natural speech output, streamed through the secure relay
+- **Google sign-in** — single-user auth, gated by a whitelist
+- **Local fallback** — tasks, notes, and reminders work offline in browser storage
+- **Rich markdown rendering** — rendered with marked.js
 
-- `OPENROUTER_API_KEY` — the OpenRouter provider key
-- `ELEVENLABS_API_KEY` — the ElevenLabs provider key
-- `WINSTON_ALLOWED_EMAIL` — the exact Google email allowed to use the proxy
+## Prerequisites
 
-Enable the Google provider in Firebase Authentication, then manually rerun **Deploy to Firebase Hosting on merge**. The workflow copies the values into Google Secret Manager and deploys Hosting plus Functions. If any runtime secret is missing, it safely deploys Hosting only and leaves the legacy local-key fallback available.
+- A running **Hermes Agent** instance with the API server enabled at `localhost:8642`
+- A **Cloudflare tunnel** exposing the Hermes API to the internet
+- A **Firebase project** with Authentication (Google provider), Functions, and Hosting enabled
+- **GitHub repository secrets**:
+  - `HERMES_API_KEY` — key for authenticating to Hermes
+  - `HERMES_API_URL` — the Cloudflare tunnel URL pointing to Hermes
+  - `ELEVENLABS_API_KEY` — ElevenLabs API key for TTS
+  - `WINSTON_ALLOWED_EMAIL` — the Google email authorized to use the app
+
+## Deployment
+
+Push to the `main` branch. The GitHub Actions workflow:
+
+1. Copies secrets to Google Secret Manager
+2. Deploys the Firebase Function with secret access
+3. Deploys Hosting assets to Firebase Hosting
+
+If secrets are missing, Hosting deploys safely with a local-key fallback path.
 
 ## Development
 
-Serve the repository as a static site. Run the core behavior tests with:
+Serve locally as a static site:
 
-```powershell
-npm.cmd test
+```bash
+npx serve .
 ```
+
+Run core behavior tests:
+
+```bash
+npm test
+```
+
+## Why this matters
+
+This is a production-ready pattern for running a private AI assistant behind a public web UI. No cloud LLM proxy service, no vendor lock-in, no client-side API keys. The AI runs on your hardware. The frontend could be anything — this architecture separates the surface (PWA, web app, SMS, Telegram) from the brain (Hermes Agent).

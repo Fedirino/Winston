@@ -99,12 +99,27 @@ async function handleChat(req, res) {
   let reply = data && data.choices && data.choices[0] && data.choices[0].message
     ? String(data.choices[0].message.content || '').trim() : '';
 
-  // Trim to keep only the spoken-worthy part — strip intermediate steps, keep the headline
-  if (reply && reply.length > 120) {
-    reply = compressVoiceReply(reply);
+  // Extract tool calls from the Hermes response
+  let toolCalls = [];
+  if (data && data.choices && data.choices[0] && data.choices[0].message) {
+    const msg = data.choices[0].message;
+    if (msg.tool_calls && Array.isArray(msg.tool_calls)) {
+      toolCalls = msg.tool_calls.map(tc => ({
+        tool: tc.function?.name || 'tool',
+        arguments: tc.function?.arguments || '{}',
+        status: 'success',
+        latency: null
+      }));
+    }
   }
 
-  return json(res, 200, { reply: reply || '…' });
+  // Trim to keep only the spoken-worthy part — strip intermediate steps, keep the headline
+  let trimmed = reply;
+  if (reply && reply.length > 120) {
+    trimmed = compressVoiceReply(reply);
+  }
+
+  return json(res, 200, { reply: trimmed || reply || '…', tool_calls: toolCalls });
 }
 
 function compressVoiceReply(text) {

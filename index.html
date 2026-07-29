@@ -37,34 +37,20 @@
     button:focus-visible, a:focus-visible { outline: 2px solid rgba(255,140,66,0.6); outline-offset: 2px; }
 
     .app { height: 100dvh; max-width: 440px; margin: 0 auto;
-      display: flex; flex-direction: column; gap: 6px;
-      padding: max(20px, env(safe-area-inset-top)) 26px max(18px, env(safe-area-inset-bottom));
-      position: relative; z-index: 1; }
+          display: flex; flex-direction: column; gap: 4px;
+          padding: max(12px, env(safe-area-inset-top)) 22px max(10px, env(safe-area-inset-bottom));
+          position: relative; z-index: 1; }
 
-    /* ===== brand: legible Winston with glitch bursts ===== */
-    .brand { position: relative; width: 168px; height: 38px; border: 0; background: transparent;
-      padding: 0; cursor: pointer; text-align: left; }
-    .brand span { position: absolute; inset: 0; font-family: var(--display); font-weight: 700;
-      font-size: 24px; line-height: 38px; letter-spacing: 0.01em; pointer-events: none; white-space: nowrap; }
-    .brand .base {
-      background: linear-gradient(120deg, #ffe6d2, var(--amber) 55%, var(--amber-deep));
-      -webkit-background-clip: text; background-clip: text; color: transparent;
-      filter: drop-shadow(0 0 14px rgba(255,140,66,0.35)); }
-    .brand .gs { opacity: 0; }
-    .brand .gs1 { color: var(--amber-hot); clip-path: inset(16% 0 58% 0); animation: gpop1 4.2s steps(1, end) infinite; }
-    .brand .gs2 { color: var(--amber-deep); clip-path: inset(62% 0 10% 0); animation: gpop2 4.2s steps(1, end) infinite; }
-    @keyframes gpop1 {
-      0%, 89.9%, 100% { opacity: 0; transform: translateX(0); }
-      90%, 92% { opacity: 1; transform: translateX(-3px); }
-      93%, 94.5% { opacity: 1; transform: translateX(2px); }
-      95% { opacity: 0; }
-    }
-    @keyframes gpop2 {
-      0%, 90.9%, 100% { opacity: 0; transform: translateX(0); }
-      91%, 93% { opacity: 1; transform: translateX(3px); }
-      94%, 95.5% { opacity: 1; transform: translateX(-2px); }
-      96% { opacity: 0; }
-    }
+        /* ===== brand: simple, no glitch ===== */
+        .brand { position: relative; width: auto; height: auto; border: 0; background: transparent;
+          padding: 0; cursor: pointer; text-align: left; }
+        .brand span { display: inline; font-family: var(--display); font-weight: 600;
+          font-size: 15px; line-height: 1; letter-spacing: 0.02em; pointer-events: none; white-space: nowrap; }
+        .brand .base {
+          background: linear-gradient(120deg, #ffe6d2, var(--amber) 55%, var(--amber-deep));
+          -webkit-background-clip: text; background-clip: text; color: transparent;
+          filter: drop-shadow(0 0 8px rgba(255,140,66,0.2)); }
+        .brand .gs { display: none; }
 
     .topline { display: flex; justify-content: space-between; align-items: center; }
     .topright { display: flex; align-items: center; gap: 12px; }
@@ -80,19 +66,19 @@
     .iconbtn.flag { color: var(--amber); filter: drop-shadow(0 0 8px rgba(255,140,66,0.6)); }
 
     /* ===== the ember core ===== */
-    .stage { position: relative; height: 272px; display: grid; place-items: center; margin-top: 4px; flex: 0 0 auto; }
-    .orbitline { position: absolute; width: 248px; height: 248px; border-radius: 50%; border: 1px solid rgba(255,140,66,0.08); }
-    canvas#core { width: 316px; height: 264px; display: block; }
+        .stage { position: relative; height: 80px; display: grid; place-items: center; margin-top: 2px; flex: 0 0 auto; }
+        .orbitline { position: absolute; width: 80px; height: 80px; border-radius: 50%; border: 1px solid rgba(255,140,66,0.08); }
+        canvas#core { width: 120px; height: 80px; display: block; }
 
-    .statusword { text-align: center; font-size: 14px; font-weight: 300; color: var(--dim); letter-spacing: 0.04em; }
-    .statusword b { color: var(--ink); font-weight: 500; }
+        .statusword { text-align: center; font-size: 11px; font-weight: 300; color: var(--dim); letter-spacing: 0.04em; margin-top: -4px; }
+        .statusword b { color: var(--ink); font-weight: 400; }
 
-    /* ===== feed — rich markdown messages ===== */
-    .feed { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
-      padding: 10px 2px; scrollbar-width: none; }
-    .feed::-webkit-scrollbar { display: none; }
-    .line-kyo { font-size: 14.5px; font-weight: 300; line-height: 1.52; color: var(--ink); animation: rise .5s ease both;
-      text-align: left; max-width: 100%; overflow-wrap: break-word; word-break: break-word; }
+        /* ===== feed — rich markdown messages ===== */
+        .feed { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
+          padding: 4px 0; scrollbar-width: none; }
+        .feed::-webkit-scrollbar { display: none; }
+        .line-kyo { font-size: 13px; font-weight: 300; line-height: 1.45; color: var(--ink); animation: rise .5s ease both;
+          text-align: left; max-width: 100%; overflow-wrap: break-word; word-break: break-word; }
     .line-kyo p { margin: 0.4em 0; }
     .line-kyo p:first-child { margin-top: 0; }
     .line-kyo p:last-child { margin-bottom: 0; }
@@ -160,40 +146,39 @@
 
         @keyframes rise { from { opacity: 0; translate: 0 8px; } to { opacity: 1; translate: 0 0; } }
 
-    .line-you { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: var(--dim); word-break: break-word;
-      text-align: center; }
-    .line-you::before { content: 'you — '; opacity: 0.6; }
+    .line-you { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; color: var(--dim); word-break: break-word;
+          text-align: left; margin: 2px 0; }
 
-    .composer { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--hair); padding: 4px 2px 8px; flex: 0 0 auto; }
-    .composer input { flex: 1; min-width: 0; background: transparent; border: 0; outline: none; text-align: center;
-      color: var(--ink); font-family: var(--display); font-size: 15px; font-weight: 300; caret-color: var(--amber); }
-    .composer input::placeholder { color: rgba(245,239,233,0.28); }
-    .composer button { border: 0; background: transparent; color: var(--dim); font-family: var(--mono);
-      font-size: 10px; letter-spacing: 0.24em; cursor: pointer; padding: 4px; transition: color .2s; }
-    .composer button:hover { color: var(--amber); }
+        .composer { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--hair); padding: 2px 0 6px; flex: 0 0 auto; }
+        .composer input { flex: 1; min-width: 0; background: transparent; border: 0; outline: none;
+          color: var(--ink); font-family: var(--display); font-size: 13px; font-weight: 300; caret-color: var(--amber); }
+        .composer input::placeholder { color: rgba(245,239,233,0.28); }
+        .composer button { border: 0; background: transparent; color: var(--dim); font-family: var(--mono);
+          font-size: 9px; letter-spacing: 0.2em; cursor: pointer; padding: 2px; transition: color .2s; }
+        .composer button:hover { color: var(--amber); }
 
-    .micline { display: grid; place-items: center; padding-top: 8px; flex: 0 0 auto; }
-    .mic { position: relative; width: 96px; height: 96px; border-radius: 50%; border: 1px solid rgba(255,140,66,0.16);
-      background: rgba(255,140,66,0.04); cursor: pointer;
-      display: grid; place-items: center; transition: transform .15s, background .3s, border-color .3s; }
-    .mic:active { transform: scale(0.94); }
-    .mic-corona { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-    .mic-icon { position: relative; z-index: 3; width: 26px; height: 26px; color: var(--amber-hot);
-      filter: drop-shadow(0 0 6px rgba(255,140,66,0.5)); transition: filter .3s, color .3s; }
-    [data-state="listening"] .mic { background: rgba(255,140,66,0.16); border-color: rgba(255,140,66,0.55); }
-    [data-state="listening"] .mic-icon { color: #fff5ec; filter: drop-shadow(0 0 14px rgba(255,140,66,0.9)); }
-    .mic-ring { position: absolute; inset: -8px; border-radius: 50%; border: 1.5px solid var(--amber);
-      opacity: 0; pointer-events: none; }
-    [data-state="listening"] .mic-ring { animation: micring 1.3s ease-out infinite; }
-    @keyframes micring {
-      0% { opacity: 0.55; transform: scale(0.82); }
-      100% { opacity: 0; transform: scale(1.28); }
-    }
-    .whisper { text-align: center; font-family: var(--mono); font-size: 9px; letter-spacing: 0.4em;
-      color: rgba(245,239,233,0.32); margin-top: 8px; text-transform: uppercase; flex: 0 0 auto; }
+        .micline { display: grid; place-items: center; padding-top: 4px; flex: 0 0 auto; }
+        .mic { position: relative; width: 56px; height: 56px; border-radius: 50%; border: 1px solid rgba(255,140,66,0.16);
+          background: rgba(255,140,66,0.04); cursor: pointer;
+          display: grid; place-items: center; transition: transform .15s, background .3s, border-color .3s; }
+        .mic:active { transform: scale(0.94); }
+        .mic-corona { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+        .mic-icon { position: relative; z-index: 3; width: 18px; height: 18px; color: var(--amber-hot);
+          filter: drop-shadow(0 0 4px rgba(255,140,66,0.4)); transition: filter .3s, color .3s; }
+        [data-state="listening"] .mic { background: rgba(255,140,66,0.16); border-color: rgba(255,140,66,0.55); }
+        [data-state="listening"] .mic-icon { color: #fff5ec; filter: drop-shadow(0 0 10px rgba(255,140,66,0.9)); }
+        .mic-ring { position: absolute; inset: -4px; border-radius: 50%; border: 1.5px solid var(--amber);
+          opacity: 0; pointer-events: none; }
+        [data-state="listening"] .mic-ring { animation: micring 1.3s ease-out infinite; }
+        @keyframes micring {
+          0% { opacity: 0.55; transform: scale(0.82); }
+          100% { opacity: 0; transform: scale(1.28); }
+        }
+        .whisper { text-align: center; font-family: var(--mono); font-size: 8px; letter-spacing: 0.3em;
+          color: rgba(245,239,233,0.25); margin-top: 4px; text-transform: uppercase; flex: 0 0 auto; }
 
-    .foot { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 9px;
-      letter-spacing: 0.2em; color: rgba(245,239,233,0.22); padding-top: 10px; flex: 0 0 auto; }
+        .foot { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 8px;
+          letter-spacing: 0.15em; color: rgba(245,239,233,0.18); padding-top: 4px; flex: 0 0 auto; }
 
     /* ===== settings ===== */
     .scrim { position: fixed; inset: 0; background: rgba(8,7,9,0.7); backdrop-filter: blur(10px); display: none; z-index: 10; }
@@ -245,24 +230,23 @@
 
     /* ===== desktop / large-viewport scale-up ===== */
     @media (min-width: 820px) and (min-height: 640px) {
-      body { overflow: auto; }
-      .app { max-width: 640px; padding-top: max(40px, env(safe-area-inset-top)); padding-bottom: max(32px, env(safe-area-inset-bottom)); gap: 10px; }
-      .brand { width: 240px; height: 54px; }
-      .brand span { font-size: 34px; line-height: 54px; }
-      .stage { height: 380px; }
-      .orbitline { width: 356px; height: 356px; }
-      canvas#core { width: 452px; height: 378px; }
-      .statusword { font-size: 17px; }
-      .feed { gap: 14px; padding: 14px 2px; }
-      .line-kyo { font-size: 18px; }
-      .line-you { font-size: 11.5px; }
-      .composer input { font-size: 18px; }
-      .mic { width: 132px; height: 132px; }
-      .mic-icon { width: 34px; height: 34px; }
-      .whisper { font-size: 10.5px; margin-top: 12px; }
-      .foot { font-size: 10.5px; }
-      .sheet { width: min(520px, 90vw); padding: 28px; }
-    }
+          body { overflow: auto; }
+          .app { max-width: 560px; padding-top: max(24px, env(safe-area-inset-top)); padding-bottom: max(16px, env(safe-area-inset-bottom)); gap: 6px; }
+          .brand span { font-size: 18px; }
+          .stage { height: 100px; }
+          .orbitline { width: 100px; height: 100px; }
+          canvas#core { width: 160px; height: 100px; }
+          .statusword { font-size: 13px; }
+          .feed { gap: 8px; padding: 8px 0; }
+          .line-kyo { font-size: 14.5px; }
+          .line-you { font-size: 11px; }
+          .composer input { font-size: 15px; }
+          .mic { width: 64px; height: 64px; }
+          .mic-icon { width: 20px; height: 20px; }
+          .whisper { font-size: 9px; margin-top: 6px; }
+          .foot { font-size: 9px; }
+          .sheet { width: min(520px, 90vw); padding: 28px; }
+        }
   </style>
 </head>
 <body data-state="idle">

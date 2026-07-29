@@ -335,9 +335,44 @@
   </div>
 
   <script type="module">
-    import { createWinstonCloud } from './src/services/cloud.js';
+      import { createWinstonCloud } from './src/services/cloud.js';
 
-    const APP_VERSION = '0.9.0';
+      // Detect if running inside Tauri desktop app
+            const isTauri = typeof window !== 'undefined' && window.__TAURI__ !== undefined;
+
+            // Tauri native bridge — calls Rust commands directly (no Firebase needed)
+            function createTauriCloud() {
+              const invoke = window.__TAURI__.core.invoke;
+              let ready = true;
+
+              function proxy(fn) {
+                return async (payload) => {
+                  const result = await invoke(fn, payload || {});
+                  return result;
+                };
+              }
+
+              return {
+                              init: async () => ({ ready: true, user: { email: 'local', displayName: 'Local' } }),
+                              signIn: async () => {},
+                              signOut: async () => {},
+                              chat: (payload) => invoke('chat', { input: buildTauriInput(payload) }),
+                              speak: async (payload) => {
+                                const audioData = await invoke('speak', { text: payload.text });
+                                return new Blob([new Uint8Array(audioData)], { type: 'audio/mpeg' });
+                              },
+                              transcribe: (payload) => invoke('transcribe', { audio: payload.audio, mime: payload.mime }),
+                            };
+            }
+
+            function buildTauriInput(payload) {
+              const msgs = payload.messages || [];
+              return msgs
+                .map(m => (m.role === 'user' ? 'User: ' : 'Assistant: ') + m.content)
+                .join('\n');
+            }
+
+      const APP_VERSION = '0.9.0';
     const DEFAULT_ELEVEN_VOICE_ID = 'goT3UYdM9bhm0n2lmKQx';
 
     // ---------- state ----------
@@ -358,7 +393,12 @@
                   };
 
     const cloudState = { ready: false, initialized: false, user: null, error: '' };
-    const cloud = createWinstonCloud({
+    if (isTauri) {
+      cloudState.ready = true;
+      cloudState.initialized = true;
+      cloudState.user = { email: 'local', displayName: 'Local' };
+    }
+    const cloud = isTauri ? createTauriCloud() : createWinstonCloud({
       onState(next) {
         Object.assign(cloudState, next);
         updateCloudUI();

@@ -569,15 +569,34 @@
             }
 
     function stripForTTS(text) {
-          return text
-            .replace(/\*\*([^*]+)\*\*/g, '$1')
-            .replace(/\*([^*]+)\*/g, '$1')
-            .replace(/`[^`]+`/g, '')
-            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-            .replace(/https?:\/\/\S+/g, '')
-            .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
-            .replace(/\s+/g, ' ').trim();
-        }
+              return text
+                // Expand abbreviations before cleaning
+                .replace(/\bmph\b/gi, 'miles per hour')
+                .replace(/\bkm\/?h\b/gi, 'kilometers per hour')
+                .replace(/\bft\b/gi, 'feet')
+                .replace(/\bin\b/gi, 'inches')
+                .replace(/\bkm\b/gi, 'kilometers')
+                .replace(/\bcm\b/gi, 'centimeters')
+                .replace(/\bmm\b/gi, 'millimeters')
+                .replace(/\bvs\.?\b/gi, 'versus')
+                .replace(/\bhrs?\b/gi, 'hours')
+                .replace(/\bmins?\b/gi, 'minutes')
+                .replace(/\bsecs?\b/gi, 'seconds')
+                .replace(/\bdept\b/gi, 'department')
+                .replace(/\bappt\b/gi, 'appointment')
+                .replace(/\binfo\b/gi, 'information')
+                .replace(/\betc\b\.?/gi, 'et cetera')
+                .replace(/\bapprox\b/gi, 'approximately')
+                .replace(/%/g, 'percent')
+                // Strip markdown formatting
+                .replace(/\*\*([^*]+)\*\*/g, '$1')
+                .replace(/\*([^*]+)\*/g, '$1')
+                .replace(/`[^`]+`/g, '')
+                .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+                .replace(/https?:\/\/\S+/g, '')
+                .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+                .replace(/\s+/g, ' ').trim();
+            }
 
         // ---------- streaming dots ----------
         let streamingDotsEl = null;

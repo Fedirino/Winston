@@ -519,24 +519,40 @@
           if (mode === 'idle') startAmbient(); else stopAmbient();
         }
 
-    function addLine(role, text) {
-      const d = document.createElement('div');
-      d.className = role === 'you' ? 'line-you' : 'line-kyo';
-      if (role === 'you') {
-        d.textContent = text;
-      } else {
-        try {
-          const html = marked.parse(text, { breaks: true, gfm: true });
-          d.innerHTML = html;
-        } catch (e) {
-          d.textContent = text;
+    function addLine(role, text, withCopy) {
+          const d = document.createElement('div');
+          d.className = role === 'you' ? 'line-you' : 'line-kyo';
+          if (role === 'you') {
+            d.textContent = text;
+          } else {
+            try {
+              const html = marked.parse(text, { breaks: true, gfm: true });
+              d.innerHTML = html;
+            } catch (e) {
+              d.textContent = text;
+            }
+            // Add copy button for assistant messages
+            if (withCopy) {
+              const copyBtn = document.createElement('button');
+              copyBtn.textContent = '📋';
+              copyBtn.style.cssText = 'background:none;border:1px solid var(--hair);border-radius:6px;color:var(--dim);cursor:pointer;font-size:11px;margin-top:6px;padding:3px 8px;transition:color .15s;';
+              copyBtn.title = 'Copy text';
+              copyBtn.onmouseenter = () => { copyBtn.style.color = 'var(--amber)'; };
+              copyBtn.onmouseleave = () => { copyBtn.style.color = 'var(--dim)'; };
+              copyBtn.onclick = () => {
+                navigator.clipboard.writeText(text).then(() => {
+                  copyBtn.textContent = '✓ Copied';
+                  setTimeout(() => { copyBtn.textContent = '📋'; }, 2000);
+                }).catch(() => {});
+              };
+              d.appendChild(copyBtn);
+            }
+          }
+          els.transcript.appendChild(d);
+          while (els.transcript.children.length > 40) els.transcript.removeChild(els.transcript.firstChild);
+          els.transcript.scrollTop = els.transcript.scrollHeight;
+          return d;
         }
-      }
-      els.transcript.appendChild(d);
-      while (els.transcript.children.length > 40) els.transcript.removeChild(els.transcript.firstChild);
-      els.transcript.scrollTop = els.transcript.scrollHeight;
-      return d;
-    }
 
     function showToast(message) {
       els.toastText.textContent = message;
@@ -626,14 +642,14 @@
                 const raw = data.reply || '';
                 const toolCalls = data.tool_calls || [];
                 const { text: reply, action } = parseAction(raw);
-                state.messages.push({ role: 'assistant', content: raw });
-                // Render tool call cards before the reply
-                for (const tc of toolCalls) {
-                  els.transcript.appendChild(renderToolCallCard(tc));
-                }
-                addLine('kyo', reply || raw);
-                speak(stripForTTS(reply || raw));
-                if (action) runAction(action);
+                                state.messages.push({ role: 'assistant', content: raw });
+                                // Render tool call cards before the reply
+                                for (const tc of toolCalls) {
+                                  els.transcript.appendChild(renderToolCallCard(tc));
+                                }
+                                addLine('kyo', reply || raw, true);
+                                if (state.persona !== 'signal-ghost') speak(stripForTTS(reply || raw));
+                                if (action) runAction(action);
               } catch (e) {
                 setMode('idle');
                 const msg = (e && e.message) ? e.message : 'Something went wrong.';

@@ -958,9 +958,9 @@
                   setMode('idle');
                   URL.revokeObjectURL(url);
                   state.audio = null;
-                  if (state.continuous && state.mode === 'idle') setTimeout(() => startMediaRecording(), 400);
-        });
-        audio.play().catch(() => { setMode('idle'); });
+                  if (state.continuous && state.mode === 'idle') setTimeout(() => listen(), 400);
+                          });
+                          audio.play().catch(() => { setMode('idle'); });
       } catch (e) {
         setMode('idle');
         speakViaBrowser(text);
@@ -975,10 +975,10 @@
       u.rate = 0.92;
       u.pitch = 1.05;
       u.onend = () => {
-              setMode('idle');
-              if (state.continuous && state.mode === 'idle') setTimeout(() => startMediaRecording(), 400);
-            };
-      u.onerror = () => setMode('idle');
+                    setMode('idle');
+                    if (state.continuous && state.mode === 'idle') setTimeout(() => listen(), 400);
+                  };
+             u.onerror = () => setMode('idle');
       synth.speak(u);
     }
 
@@ -1055,7 +1055,7 @@
               if (afterWake) {
                               handleUser(afterWake, 'voice');
                             } else {
-                              startMediaRecording();
+                              listen();
                             }
             }
           }
@@ -1072,7 +1072,7 @@
               }
 
               // ---------- events ----------
-                  els.mic.addEventListener('click', startMediaRecording);
+                  els.mic.addEventListener('click', listen);
     if (els.composer) {
       els.composer.addEventListener('submit', (e) => {
         e.preventDefault();

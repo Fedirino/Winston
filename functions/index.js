@@ -177,6 +177,34 @@ async function handleSpeech(req, res) {
     .send(audio);
 }
 
+async function handleTranscribe(req, res) {
+  const audio = String((req.body && req.body.audio) || '').trim();
+  const mime = String((req.body && req.body.mime) || 'audio/webm').trim();
+  if (!audio || audio.length > 5_000_000) return json(res, 400, { error: 'Invalid audio.' });
+
+  const upstream = await fetch('https://openrouter.ai/api/v1/audio/transcriptions', {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer ' + openRouterKey.value(),
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'openai/whisper-large-v3',
+      audio: 'data:' + mime + ';base64,' + audio,
+      response_format: 'json'
+    })
+  });
+  if (!upstream.ok) {
+    const detail = (await upstream.text().catch(() => '')).slice(0, 180);
+    console.error('Transcription error', upstream.status, detail);
+    return json(res, 502, { error: 'Transcription failed.' });
+  }
+  const data = await upstream.json();
+  const text = String((data && data.text) || '').trim();
+  if (!text) return json(res, 502, { error: 'Transcription returned empty.' });
+  return json(res, 200, { text });
+}
+
 exports.api = onRequest({
   region: 'us-central1',
   timeoutSeconds: 120,
@@ -207,6 +235,7 @@ exports.api = onRequest({
   try {
     if (path.endsWith('/chat')) return await handleChat(req, res);
     if (path.endsWith('/tts')) return await handleSpeech(req, res);
+    if (path.endsWith('/transcribe')) return await handleTranscribe(req, res);
     return json(res, 404, { error: 'Unknown endpoint.' });
   } catch (error) {
     console.error('Winston API error', error);

@@ -122,6 +122,7 @@ export function createWinstonCloud({ onState = () => {} } = {}) {
     signIn,
     signOut,
     chat: (payload) => request('chat', { json: payload }),
-    speak: (payload) => request('tts', { json: payload, responseType: 'blob' })
+    speak: (payload) => request('tts', { json: payload, responseType: 'blob' }),
+    transcribe: (payload) => request('transcribe', { json: payload })
   };
 }

@@ -112,7 +112,53 @@
     .line-kyo a { color: var(--amber); text-decoration: underline; text-underline-offset: 2px; }
     .line-kyo a:hover { color: var(--amber-hot); }
     .line-kyo hr { border: none; border-top: 1px solid var(--hair); margin: 0.6em 0; }
-    @keyframes rise { from { opacity: 0; translate: 0 8px; } to { opacity: 1; translate: 0 0; } }
+
+        /* ===== streaming dots ===== */
+        .streaming-dots { display: flex; align-items: center; gap: 8px; padding: 10px 2px; animation: rise .5s ease both; }
+        .streaming-dots .dots { display: flex; gap: 4px; }
+        .streaming-dots .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); animation: dotbounce 1.2s ease-in-out infinite; }
+        .streaming-dots .dot:nth-child(2) { animation-delay: 0.2s; }
+        .streaming-dots .dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes dotbounce { 0%,60%,100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-8px); opacity: 1; } }
+        .streaming-dots .phase { font-size: 12px; font-weight: 300; color: var(--dim); letter-spacing: 0.06em; }
+
+        /* ===== tool call cards ===== */
+        .toolcall-card { margin: 6px 0; border-radius: 10px; overflow: hidden; border: 1px solid var(--hair);
+          background: rgba(0,0,0,0.15); font-size: 12.5px; animation: rise .3s ease both; }
+        .toolcall-header { display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+          cursor: pointer; user-select: none; width: 100%; background: transparent; border: 0; color: var(--ink);
+          font-family: inherit; font-size: inherit; text-align: left; }
+        .toolcall-header:hover { background: rgba(255,140,66,0.04); }
+        .toolcall-chevron { width: 14px; height: 14px; flex: 0 0 auto; color: var(--dim); transition: transform .2s; }
+        .toolcall-chevron.open { transform: rotate(90deg); }
+        .toolcall-status { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; }
+        .toolcall-status.running { background: var(--amber); animation: pipblink 0.8s ease-in-out infinite; }
+        .toolcall-status.success { background: #4ade80; box-shadow: 0 0 6px rgba(74,222,128,0.5); }
+        .toolcall-status.error { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.5); }
+        .toolcall-name { font-weight: 500; color: var(--ink); flex: 0 0 auto; }
+        .toolcall-args-preview { color: var(--dim); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+        .toolcall-latency { color: var(--dim); font-size: 10.5px; font-family: var(--mono); flex: 0 0 auto; }
+        .toolcall-body { border-top: 1px solid var(--hair); padding: 8px 12px 10px; }
+        .toolcall-section-label { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); margin-bottom: 4px; }
+        .toolcall-body pre { background: rgba(0,0,0,0.3); border: 1px solid var(--hair); border-radius: 6px;
+          padding: 8px 10px; font-family: var(--mono); font-size: 11px; line-height: 1.4;
+          overflow-x: auto; white-space: pre-wrap; word-break: break-all; color: var(--ink); margin: 0 0 8px; max-height: 120px; }
+        .toolcall-body pre:last-child { margin-bottom: 0; }
+
+        /* ===== mic recording animation ===== */
+        [data-state="recording"] .mic { background: rgba(255,140,66,0.2); border-color: var(--amber); box-shadow: 0 0 30px rgba(255,140,66,0.2); }
+        [data-state="recording"] .mic-icon { color: #fff5ec; filter: drop-shadow(0 0 18px rgba(255,140,66,0.9)); }
+        [data-state="recording"] .mic-ring { animation: micring 1s ease-out infinite; }
+        [data-state="transcribing"] .mic { background: rgba(74,222,128,0.12); border-color: rgba(74,222,128,0.4); }
+        [data-state="transcribing"] .mic-icon { color: #4ade80; filter: drop-shadow(0 0 12px rgba(74,222,128,0.5)); }
+        .mic-waves { position: absolute; inset: -4px; border-radius: 50%; pointer-events: none; }
+        .mic-wave { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid var(--amber); opacity: 0; }
+        [data-state="recording"] .mic-wave:nth-child(1) { animation: micwave 1.8s ease-out infinite; }
+        [data-state="recording"] .mic-wave:nth-child(2) { animation: micwave 1.8s ease-out 0.6s infinite; }
+        [data-state="recording"] .mic-wave:nth-child(3) { animation: micwave 1.8s ease-out 1.2s infinite; }
+        @keyframes micwave { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(1.5); opacity: 0; } }
+
+        @keyframes rise { from { opacity: 0; translate: 0 8px; } to { opacity: 1; translate: 0 0; } }
 
     .line-you { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: var(--dim); word-break: break-word;
       text-align: center; }
@@ -252,15 +298,16 @@
     </form>
 
     <div class="micline">
-      <button class="mic" id="mic" aria-label="Talk to Winston">
-        <span class="mic-ring" aria-hidden="true"></span>
-        <canvas class="mic-corona" id="mic-corona" width="220" height="220" aria-hidden="true"></canvas>
-        <svg class="mic-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" stroke-width="1.9"/>
-          <path d="M5 11a7 7 0 0014 0M12 18v3M8.5 21h7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
-        </svg>
-      </button>
-    </div>
+          <button class="mic" id="mic" aria-label="Talk to Winston">
+            <span class="mic-ring" aria-hidden="true"></span>
+            <span class="mic-waves" aria-hidden="true"><span class="mic-wave"></span><span class="mic-wave"></span><span class="mic-wave"></span></span>
+            <canvas class="mic-corona" id="mic-corona" width="220" height="220" aria-hidden="true"></canvas>
+            <svg class="mic-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" stroke-width="1.9"/>
+              <path d="M5 11a7 7 0 0014 0M12 18v3M8.5 21h7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
     <div class="whisper" id="whisper">tap to speak</div>
 
     <div class="foot">
@@ -379,24 +426,28 @@
 
     // ---------- ui ----------
     const LABEL = {
-      idle: '<b>Winston</b> is here',
-      listening: '<b>Winston</b> is listening…',
-      thinking: '<b>Winston</b> is thinking…',
-      speaking: '<b>Winston</b> is speaking'
-    };
-    const WHISP = {
-      idle: 'tap to speak',
-      listening: 'listening — tap to stop',
-      thinking: 'one moment',
-      speaking: 'one moment'
-    };
-    function setMode(mode, label) {
-      state.mode = mode;
-      document.body.dataset.state = mode;
-      els.status.innerHTML = label ? label : LABEL[mode];
-      els.whisper.textContent = (mode === 'idle' && state.handsFree) ? 'say "hey winston" — or tap' : WHISP[mode];
-      if (mode === 'idle') startAmbient(); else stopAmbient();
-    }
+          idle: '<b>Winston</b> is here',
+          listening: '<b>Winston</b> is listening…',
+          transcribing: '<b>Winston</b> is transcribing…',
+          thinking: '<b>Winston</b> is thinking…',
+          speaking: '<b>Winston</b> is speaking'
+        };
+        const WHISP = {
+          idle: 'tap to speak',
+          listening: 'listening — tap to stop',
+          transcribing: 'transcribing…',
+          thinking: 'one moment',
+          speaking: 'one moment'
+        };
+        function setMode(mode, label) {
+          state.mode = mode;
+          document.body.dataset.state = mode;
+          els.status.innerHTML = label ? label : LABEL[mode] || LABEL.idle;
+          els.whisper.textContent = (mode === 'idle' && state.handsFree) ? 'say "hey winston" — or tap' : (WHISP[mode] || WHISP.idle);
+          if (mode === 'thinking') showStreaming('Working on it…');
+          else hideStreaming();
+          if (mode === 'idle') startAmbient(); else stopAmbient();
+        }
 
     function addLine(role, text) {
       const d = document.createElement('div');
@@ -512,15 +563,200 @@
         }
 
     function stripForTTS(text) {
-      return text
-        .replace(/\*\*([^*]+)\*\*/g, '$1')
-        .replace(/\*([^*]+)\*/g, '$1')
-        .replace(/`[^`]+`/g, '')
-        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-        .replace(/https?:\/\/\S+/g, '')
-        .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
-        .replace(/\s+/g, ' ').trim();
-    }
+          return text
+            .replace(/\*\*([^*]+)\*\*/g, '$1')
+            .replace(/\*([^*]+)\*/g, '$1')
+            .replace(/`[^`]+`/g, '')
+            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+            .replace(/https?:\/\/\S+/g, '')
+            .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+            .replace(/\s+/g, ' ').trim();
+        }
+
+        // ---------- streaming dots ----------
+        let streamingDotsEl = null;
+
+        function showStreaming(phase) {
+          hideStreaming();
+          const el = document.createElement('div');
+          el.className = 'streaming-dots';
+          el.innerHTML = '<span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span><span class="phase">' + escapeHtml(phase) + '</span>';
+          streamingDotsEl = el;
+          els.transcript.appendChild(el);
+          els.transcript.scrollTop = els.transcript.scrollHeight;
+        }
+
+        function hideStreaming() {
+          if (streamingDotsEl) {
+            streamingDotsEl.remove();
+            streamingDotsEl = null;
+          }
+        }
+
+        function escapeHtml(str) {
+          const d = document.createElement('div');
+          d.textContent = str;
+          return d.innerHTML;
+        }
+
+        // ---------- tool call cards ----------
+        function renderToolCallCard(toolCall) {
+          const card = document.createElement('div');
+          card.className = 'toolcall-card';
+
+          const header = document.createElement('button');
+          header.className = 'toolcall-header';
+          header.type = 'button';
+
+          let expanded = false;
+
+          const chevron = document.createElement('span');
+          chevron.className = 'toolcall-chevron';
+          chevron.textContent = '▶';
+
+          const statusDot = document.createElement('span');
+          statusDot.className = 'toolcall-status ' + (toolCall.status || 'running');
+
+          const nameSpan = document.createElement('span');
+          nameSpan.className = 'toolcall-name';
+          nameSpan.textContent = toolCall.tool || 'tool';
+
+          const preview = document.createElement('span');
+          preview.className = 'toolcall-args-preview';
+          try {
+            const parsed = JSON.parse(toolCall.arguments || '{}');
+            const entries = Object.entries(parsed);
+            if (entries.length > 0) {
+              const [k, v] = entries[0];
+              const val = typeof v === 'string' ? v : JSON.stringify(v);
+              preview.textContent = entries.length === 1 ? k + ': ' + val.slice(0, 40) + (val.length > 40 ? '…' : '') : k + ': ' + val.slice(0, 30) + ', …';
+            }
+          } catch (e) {
+            preview.textContent = (toolCall.arguments || '').slice(0, 60);
+          }
+
+          const latency = document.createElement('span');
+          latency.className = 'toolcall-latency';
+          if (toolCall.latency != null) {
+            latency.textContent = toolCall.latency < 1000 ? Math.round(toolCall.latency) + 'ms' : (toolCall.latency / 1000).toFixed(1) + 's';
+          }
+
+          header.append(chevron, statusDot, nameSpan, preview, latency);
+
+          const body = document.createElement('div');
+          body.className = 'toolcall-body';
+          body.style.display = 'none';
+
+          if (toolCall.arguments) {
+            const argsLabel = document.createElement('div');
+            argsLabel.className = 'toolcall-section-label';
+            argsLabel.textContent = 'arguments';
+            body.appendChild(argsLabel);
+            const pre = document.createElement('pre');
+            try {
+              pre.textContent = JSON.stringify(JSON.parse(toolCall.arguments), null, 2);
+            } catch (e) {
+              pre.textContent = toolCall.arguments;
+            }
+            body.appendChild(pre);
+          }
+
+          if (toolCall.result) {
+            const resultLabel = document.createElement('div');
+            resultLabel.className = 'toolcall-section-label';
+            resultLabel.textContent = 'result';
+            body.appendChild(resultLabel);
+            const pre = document.createElement('pre');
+            pre.textContent = toolCall.result.length > 500 ? toolCall.result.slice(0, 500) + '…' : toolCall.result;
+            body.appendChild(pre);
+          }
+
+          header.addEventListener('click', () => {
+            expanded = !expanded;
+            chevron.classList.toggle('open', expanded);
+            body.style.display = expanded ? 'block' : 'none';
+          });
+
+          card.append(header, body);
+          return card;
+        }
+
+        // ---------- media recorder mic ----------
+        let mediaRecorder = null;
+        let mediaRecorderChunks = [];
+        let mediaStream = null;
+        let transcribing = false;
+
+        async function startMediaRecording() {
+          if (transcribing) return;
+          if (mediaRecorder && mediaRecorder.state === 'recording') {
+            await stopMediaRecording();
+            return;
+          }
+          if (state.mode === 'speaking') return;
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaStream = stream;
+            mediaRecorderChunks = [];
+            const recorder = new MediaRecorder(stream);
+            mediaRecorder = recorder;
+            recorder.ondataavailable = (e) => {
+              if (e.data.size > 0) mediaRecorderChunks.push(e.data);
+            };
+            recorder.onstop = async () => {
+              stream.getTracks().forEach(t => t.stop());
+              mediaStream = null;
+              if (mediaRecorderChunks.length === 0) return;
+              const blob = new Blob(mediaRecorderChunks, { type: recorder.mimeType || 'audio/webm' });
+              mediaRecorderChunks = [];
+              await transcribeAudio(blob);
+            };
+            recorder.onerror = () => {
+              stream.getTracks().forEach(t => t.stop());
+              mediaStream = null;
+              setMode('idle');
+            };
+            recorder.start();
+            setMode('listening');
+          } catch (e) {
+            showToast('Microphone access denied. Check browser permissions.');
+          }
+        }
+
+        async function stopMediaRecording() {
+          if (mediaRecorder && mediaRecorder.state === 'recording') {
+            transcribing = true;
+            setMode('transcribing');
+            mediaRecorder.stop();
+            mediaRecorder = null;
+          }
+        }
+
+        async function transcribeAudio(blob) {
+          try {
+            const reader = new FileReader();
+            const base64 = await new Promise((resolve, reject) => {
+              reader.onload = () => resolve(reader.result.split(',')[1]);
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+            if (hasCloudSession()) {
+                      const data = await cloud.transcribe({ audio: base64, mime: blob.type });
+              const text = (data.text || '').trim();
+              transcribing = false;
+              setMode('idle');
+              if (text) handleUser(text, 'voice');
+            } else {
+              transcribing = false;
+              setMode('idle');
+              showToast('Sign in for voice transcription');
+            }
+          } catch (e) {
+            transcribing = false;
+            setMode('idle');
+            showToast('Transcription failed');
+          }
+        }
 
     async function sendToCloud() {
           const body = {
@@ -694,10 +930,10 @@
         const audio = new Audio(url);
         state.audio = audio;
         audio.addEventListener('ended', () => {
-          setMode('idle');
-          URL.revokeObjectURL(url);
-          state.audio = null;
-          if (state.continuous && state.mode === 'idle') setTimeout(() => listen(), 400);
+                  setMode('idle');
+                  URL.revokeObjectURL(url);
+                  state.audio = null;
+                  if (state.continuous && state.mode === 'idle') setTimeout(() => startMediaRecording(), 400);
         });
         audio.play().catch(() => { setMode('idle'); });
       } catch (e) {
@@ -714,9 +950,9 @@
       u.rate = 0.92;
       u.pitch = 1.05;
       u.onend = () => {
-        setMode('idle');
-        if (state.continuous && state.mode === 'idle') setTimeout(() => listen(), 400);
-      };
+              setMode('idle');
+              if (state.continuous && state.mode === 'idle') setTimeout(() => startMediaRecording(), 400);
+            };
       u.onerror = () => setMode('idle');
       synth.speak(u);
     }
@@ -792,10 +1028,10 @@
             if (/\bhey winston\b/.test(text) || /\bhey Winston\b/.test(text)) {
               const afterWake = text.replace(/\bhey winston\b/i, '').trim();
               if (afterWake) {
-                handleUser(afterWake, 'voice');
-              } else {
-                listen();
-              }
+                              handleUser(afterWake, 'voice');
+                            } else {
+                              startMediaRecording();
+                            }
             }
           }
                   }
@@ -811,7 +1047,7 @@
               }
 
               // ---------- events ----------
-                            els.mic.addEventListener('click', listen);
+                  els.mic.addEventListener('click', startMediaRecording);
     if (els.composer) {
       els.composer.addEventListener('submit', (e) => {
         e.preventDefault();

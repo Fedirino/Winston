@@ -77,49 +77,112 @@ async function handleChat(req, res) {
     return json(res, 503, { error: 'Hermes relay is not configured.' });
   }
 
-  const upstream = await fetch(hermesUrl + '/v1/chat/completions', {
+  // Convert messages to a plain input string for the runs API.
+  // Format as a conversation transcript so Hermes has full context.
+  const input = messages
+    .map(m => (m.role === 'user' ? 'User: ' : 'Assistant: ') + m.content)
+    .join('\n');
+
+  // Step 1: Create a run
+  const createResp = await fetch(hermesUrl + '/v1/runs', {
     method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + hermesKey,
-      'Content-Type': 'application/json'
-    },
+    headers: { Authorization: 'Bearer ' + hermesKey, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'hermes-agent',
-      messages,
+      input: input.slice(0, 60_000),
       max_tokens: Math.min(1000, Math.max(80, Number(req.body.max_tokens) || 220)),
       temperature: Math.min(1, Math.max(0, Number(req.body.temperature) || 0.6))
     })
   });
-  if (!upstream.ok) {
-    const detail = (await upstream.text().catch(() => '')).slice(0, 180);
-    console.error('Hermes relay error', upstream.status, detail);
+  if (!createResp.ok) {
+    const detail = (await createResp.text().catch(() => '')).slice(0, 180);
+    console.error('Hermes runs create error', createResp.status, detail);
     return json(res, 502, { error: 'The Hermes relay is unavailable.' });
   }
-  const data = await upstream.json();
-  let reply = data && data.choices && data.choices[0] && data.choices[0].message
-    ? String(data.choices[0].message.content || '').trim() : '';
+  const run = await createResp.json();
+  const runId = run.run_id;
+  if (!runId) return json(res, 502, { error: 'Hermes relay did not return a run ID.' });
 
-  // Extract tool calls from the Hermes response
-  let toolCalls = [];
-  if (data && data.choices && data.choices[0] && data.choices[0].message) {
-    const msg = data.choices[0].message;
-    if (msg.tool_calls && Array.isArray(msg.tool_calls)) {
-      toolCalls = msg.tool_calls.map(tc => ({
-        tool: tc.function?.name || 'tool',
-        arguments: tc.function?.arguments || '{}',
-        status: 'success',
-        latency: null
-      }));
+  // Step 2: Poll events until completed or timeout
+  const deadline = Date.now() + 110_000;
+  let fullOutput = '';
+  const toolCalls = [];
+  let done = false;
+
+  while (Date.now() < deadline && !done) {
+    await new Promise(r => setTimeout(r, 600));
+    try {
+      const eventsResp = await fetch(hermesUrl + '/v1/runs/' + runId + '/events', {
+        headers: { Authorization: 'Bearer ' + hermesKey }
+      });
+      if (!eventsResp.ok) {
+        // 404 means the event log is gone — fetch the run status directly
+        if (eventsResp.status === 404) {
+          const statusResp = await fetch(hermesUrl + '/v1/runs/' + runId, {
+            headers: { Authorization: 'Bearer ' + hermesKey }
+          });
+          if (statusResp.ok) {
+            const status = await statusResp.json();
+            fullOutput = status.output || fullOutput;
+          }
+          done = true;
+        }
+        break;
+      }
+      const raw = await eventsResp.text();
+      // Parse SSE-style data: lines
+      for (const line of raw.split('\n')) {
+        if (!line.startsWith('data: ')) continue;
+        const payload = line.slice(6).trim();
+        if (!payload) continue;
+        try {
+          const event = JSON.parse(payload);
+          if (event.event === 'run.completed') {
+            fullOutput = event.output || fullOutput;
+            done = true;
+          } else if (event.event === 'message.delta') {
+            fullOutput += event.delta || '';
+          } else if (event.event === 'reasoning.available') {
+            // Reasoning text — can use as-is or append
+          } else if (event.event === 'tool.started') {
+            toolCalls.push({
+              tool: event.tool || 'tool',
+              arguments: event.preview || '',
+              status: 'running',
+              latency: null
+            });
+          } else if (event.event === 'tool.completed') {
+            // Update the last matching tool
+            const lastRunning = toolCalls.filter(t => t.status === 'running').length;
+            if (lastRunning > 0) {
+              for (let i = toolCalls.length - 1; i >= 0; i--) {
+                if (toolCalls[i].status === 'running') {
+                  toolCalls[i].status = event.error ? 'error' : 'success';
+                  toolCalls[i].latency = event.duration ? Math.round(event.duration * 1000) : null;
+                  break;
+                }
+              }
+            }
+          }
+        } catch (e) {
+          // Skip malformed events
+        }
+      }
+    } catch (e) {
+      console.error('Hermes events poll error', e.message);
+      break;
     }
   }
 
-  // Trim to keep only the spoken-worthy part — strip intermediate steps, keep the headline
-  let trimmed = reply;
-  if (reply && reply.length > 120) {
-    trimmed = compressVoiceReply(reply);
+  let trimmed = fullOutput || '';
+  if (fullOutput && fullOutput.length > 120) {
+    trimmed = compressVoiceReply(fullOutput);
   }
 
-  return json(res, 200, { reply: trimmed || reply || '…', tool_calls: toolCalls });
+  return json(res, 200, {
+    reply: trimmed || fullOutput || '…',
+    tool_calls: toolCalls
+  });
 }
 
 function compressVoiceReply(text) {

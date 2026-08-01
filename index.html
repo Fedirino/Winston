@@ -1073,67 +1073,95 @@
     // ---------- speech recognition ----------
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
+                let micFinalText = '';
+                let micSilenceTimer = null;
+                let micSending = false;
+                const MIC_SILENCE_MS = 1500;
 
-        function listen() {
-          if (!SpeechRecognition) {
-            showToast('Voice input is not supported in this browser.');
-            return;
-          }
-          if (state.mode === 'listening') {
-            stopListening();
-            return;
-          }
-          if (state.speaking || state.mode === 'speaking') return;
+                function listen() {
+                  if (!SpeechRecognition) {
+                    showToast('Voice input is not supported in this browser.');
+                    return;
+                  }
+                  if (state.mode === 'listening') {
+                    // Tap again — stop and send what we have
+                    if (micFinalText) handleUser(micFinalText, 'voice');
+                    micFinalText = '';
+                    stopListening();
+                    return;
+                  }
+                  if (state.speaking || state.mode === 'speaking') return;
 
-          // Stop wake word so both don't compete for the mic
-          stopWakeWord();
+                  // Stop wake word so both don't compete for the mic
+                  stopWakeWord();
 
-          if (recognition) {
-            try { recognition.stop(); } catch (e) {}
-            recognition = null;
-          }
+                  if (recognition) {
+                    try { recognition.stop(); } catch (e) {}
+                    recognition = null;
+                  }
+                  micFinalText = '';
+                  micSending = false;
+                  if (micSilenceTimer) { clearTimeout(micSilenceTimer); micSilenceTimer = null; }
 
-          recognition = new SpeechRecognition();
-          recognition.continuous = false;  // Single utterance — stops after a pause
-          recognition.interimResults = true;
-          recognition.lang = 'en-US';
+                  recognition = new SpeechRecognition();
+                  recognition.continuous = true;  // Keep listening through brief pauses
+                  recognition.interimResults = true;
+                  recognition.lang = 'en-US';
 
-          let finalText = '';
-          recognition.onresult = (e) => {
-            for (let i = e.resultIndex; i < e.results.length; i++) {
-              if (e.results[i].isFinal) finalText += e.results[i][0].transcript;
-            }
-          };
-          recognition.onend = () => {
-            state.listening = false;
-            setMode('idle');
-            if (finalText) handleUser(finalText, 'voice');
-            // Restart wake word if enabled
-            if (state.handsFree) startWakeWord();
-          };
-          recognition.onerror = () => {
-            state.listening = false;
-            setMode('idle');
-            if (state.handsFree) startWakeWord();
-          };
+                  recognition.onresult = (e) => {
+                    for (let i = e.resultIndex; i < e.results.length; i++) {
+                      if (e.results[i].isFinal) micFinalText += e.results[i][0].transcript;
+                    }
+                    // Reset silence timer on any new final speech
+                    if (micSilenceTimer) clearTimeout(micSilenceTimer);
+                    micSilenceTimer = setTimeout(() => {
+                      if (micSending) return;
+                      if (!micFinalText) { micSilenceTimer = null; return; }
+                      micSending = true;
+                      stopListening();
+                      if (micFinalText) handleUser(micFinalText, 'voice');
+                      micFinalText = '';
+                      micSilenceTimer = null;
+                    }, MIC_SILENCE_MS);
+                  };
+                  recognition.onend = () => {
+                    state.listening = false;
+                    if (micSilenceTimer) { clearTimeout(micSilenceTimer); micSilenceTimer = null; }
+                    setMode('idle');
+                    if (micFinalText && !micSending) {
+                      handleUser(micFinalText, 'voice');
+                    }
+                    micFinalText = '';
+                    micSending = false;
+                    if (state.handsFree) startWakeWord();
+                  };
+                  recognition.onerror = () => {
+                    state.listening = false;
+                    if (micSilenceTimer) { clearTimeout(micSilenceTimer); micSilenceTimer = null; }
+                    micFinalText = '';
+                    micSending = false;
+                    setMode('idle');
+                    if (state.handsFree) startWakeWord();
+                  };
 
-          try {
-            recognition.start();
-            state.listening = true;
-            setMode('listening');
-          } catch (e) {
-            recognition = null;
-            if (state.handsFree) startWakeWord();
-          }
-        }
+                  try {
+                    recognition.start();
+                    state.listening = true;
+                    setMode('listening');
+                  } catch (e) {
+                    recognition = null;
+                    if (state.handsFree) startWakeWord();
+                  }
+                }
 
-        function stopListening() {
-          if (recognition) {
-            try { recognition.stop(); } catch (e) {}
-            recognition = null;
-          }
-          state.listening = false;
-        }
+                function stopListening() {
+                  if (micSilenceTimer) { clearTimeout(micSilenceTimer); micSilenceTimer = null; }
+                  if (recognition) {
+                    try { recognition.stop(); } catch (e) {}
+                    recognition = null;
+                  }
+                  state.listening = false;
+                }
 
         // ---------- hands-free wake word ----------
         let wakeRecognition = null;

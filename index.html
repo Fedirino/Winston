@@ -515,8 +515,10 @@
           els.status.innerHTML = label ? label : LABEL[mode] || LABEL.idle;
           els.whisper.textContent = (mode === 'idle' && state.handsFree) ? 'say "hey winston" — or tap' : (WHISP[mode] || WHISP.idle);
           if (mode === 'thinking') showStreaming('Working on it…');
-          else hideStreaming();
-          if (mode === 'idle') startAmbient(); else stopAmbient();
+                    else hideStreaming();
+                    // Pause wake word during any interaction, resume on idle
+                    if (mode === 'idle') { if (state.handsFree) startWakeWord(); }
+                    else { stopWakeWord(); }
         }
 
     function addLine(role, text, withCopy) {
@@ -614,9 +616,12 @@
               localStorage.setItem('kyo.handsFree', state.handsFree ? '1' : '0');
               localStorage.setItem('kyo.continuous', state.continuous ? '1' : '0');
               localStorage.setItem('kyo.persona', state.persona);
-              applyPersona();
-              closeSettings();
-              showToast('Saved');
+                            applyPersona();
+                            closeSettings();
+                            // Restart or stop wake word based on new setting
+                            if (state.handsFree) { stopWakeWord(); setTimeout(() => startWakeWord(), 200); }
+                            else { stopWakeWord(); }
+                            showToast('Saved');
             }
 
     // ---------- chat ----------
@@ -648,7 +653,8 @@
                                   els.transcript.appendChild(renderToolCallCard(tc));
                                 }
                                 addLine('kyo', reply || raw, true);
-                                if (state.persona !== 'signal-ghost') speak(stripForTTS(reply || raw));
+                                                                if (state.persona !== 'signal-ghost') speak(stripForTTS(reply || raw));
+                                                                else setMode('idle');
                                 if (action) runAction(action);
               } catch (e) {
                 setMode('idle');
@@ -1018,15 +1024,7 @@
     })();
 
     // ---------- voice ----------
-    let ambientTimer = null;
-    let synth = null;
-
-    function startAmbient() {
-      // Subtle ambient pulse can go here if desired
-    }
-    function stopAmbient() {
-      // No-op
-    }
+        let synth = null;
 
     function speak(text) {
       if (!text || !text.trim()) return;
@@ -1073,87 +1071,115 @@
     }
 
     // ---------- speech recognition ----------
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let recognition = null;
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition = null;
 
-    function listen() {
-      if (!SpeechRecognition) {
-        showToast('Voice input is not supported in this browser.');
-        return;
-      }
-      if (state.mode === 'listening') {
-        stopListening();
-        return;
-      }
-      if (state.speaking || state.mode === 'speaking') return;
-      if (!recognition) {
-        recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = 'en-US';
-        recognition.onresult = (e) => {
-          let final = '';
-          for (let i = e.resultIndex; i < e.results.length; i++) {
-            if (e.results[i].isFinal) final += e.results[i][0].transcript;
+        function listen() {
+          if (!SpeechRecognition) {
+            showToast('Voice input is not supported in this browser.');
+            return;
           }
-          if (final) {
+          if (state.mode === 'listening') {
             stopListening();
-            handleUser(final, 'voice');
+            return;
           }
-        };
-        recognition.onend = () => {
-          setMode('idle');
-          state.listening = false;
-        };
-        recognition.onerror = () => {
-          setMode('idle');
-          state.listening = false;
-        };
-      }
-      try {
-        recognition.start();
-        state.listening = true;
-        setMode('listening');
-      } catch (e) {
-        recognition = null;
-      }
-    }
+          if (state.speaking || state.mode === 'speaking') return;
 
-    function stopListening() {
-      if (recognition) {
-        try { recognition.stop(); } catch (e) {}
-      }
-      state.listening = false;
-    }
+          // Stop wake word so both don't compete for the mic
+          stopWakeWord();
 
-    // ---------- hands-free wake word ----------
-    let wakeRecognition = null;
+          if (recognition) {
+            try { recognition.stop(); } catch (e) {}
+            recognition = null;
+          }
 
-    function startWakeWord() {
-      if (!state.handsFree || !SpeechRecognition) return;
-      if (wakeRecognition) return;
-      wakeRecognition = new SpeechRecognition();
-      wakeRecognition.continuous = true;
-      wakeRecognition.interimResults = true;
-      wakeRecognition.lang = 'en-US';
-      wakeRecognition.onresult = (e) => {
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          if (e.results[i].isFinal) {
-            const text = e.results[i][0].transcript.toLowerCase().trim();
-            if (/\bhey winston\b/.test(text) || /\bhey Winston\b/.test(text)) {
-              const afterWake = text.replace(/\bhey winston\b/i, '').trim();
-              if (afterWake) {
-                              handleUser(afterWake, 'voice');
-                            } else {
-                              listen();
-                            }
+          recognition = new SpeechRecognition();
+          recognition.continuous = false;  // Single utterance — stops after a pause
+          recognition.interimResults = true;
+          recognition.lang = 'en-US';
+
+          let finalText = '';
+          recognition.onresult = (e) => {
+            for (let i = e.resultIndex; i < e.results.length; i++) {
+              if (e.results[i].isFinal) finalText += e.results[i][0].transcript;
             }
+          };
+          recognition.onend = () => {
+            state.listening = false;
+            setMode('idle');
+            if (finalText) handleUser(finalText, 'voice');
+            // Restart wake word if enabled
+            if (state.handsFree) startWakeWord();
+          };
+          recognition.onerror = () => {
+            state.listening = false;
+            setMode('idle');
+            if (state.handsFree) startWakeWord();
+          };
+
+          try {
+            recognition.start();
+            state.listening = true;
+            setMode('listening');
+          } catch (e) {
+            recognition = null;
+            if (state.handsFree) startWakeWord();
           }
+        }
+
+        function stopListening() {
+          if (recognition) {
+            try { recognition.stop(); } catch (e) {}
+            recognition = null;
+          }
+          state.listening = false;
+        }
+
+        // ---------- hands-free wake word ----------
+        let wakeRecognition = null;
+
+        function startWakeWord() {
+          if (!state.handsFree || !SpeechRecognition) return;
+          if (wakeRecognition) return;
+          wakeRecognition = new SpeechRecognition();
+          wakeRecognition.continuous = true;
+          wakeRecognition.interimResults = true;
+          wakeRecognition.lang = 'en-US';
+          wakeRecognition.onresult = (e) => {
+            for (let i = e.resultIndex; i < e.results.length; i++) {
+              const text = e.results[i][0].transcript.toLowerCase().trim();
+              // Check both interim and final for faster response
+              if (/\bhey (winston|weston|winsten|whinston)\b/.test(text)) {
+                // If this was a final result, process it; otherwise wait for final
+                if (e.results[i].isFinal) {
+                  const afterWake = text.replace(/\bhey (?:winston|weston|winsten|whinston)\b/i, '').trim();
+                  if (afterWake) {
+                    handleUser(afterWake, 'voice');
+                  } else {
+                    listen();
                   }
-                };
-                wakeRecognition.onerror = () => { wakeRecognition = null; };
-                try { wakeRecognition.start(); } catch (e) { wakeRecognition = null; }
+                }
               }
+            }
+          };
+          wakeRecognition.onend = () => {
+            // Browser killed the session — restart if still wanted
+            wakeRecognition = null;
+            if (state.handsFree && state.mode === 'idle' && !state.listening) startWakeWord();
+          };
+          wakeRecognition.onerror = () => {
+            wakeRecognition = null;
+            if (state.handsFree) setTimeout(() => startWakeWord(), 300);
+          };
+          try { wakeRecognition.start(); } catch (e) { wakeRecognition = null; }
+        }
+
+        function stopWakeWord() {
+          if (wakeRecognition) {
+            try { wakeRecognition.stop(); } catch (e) {}
+            wakeRecognition = null;
+          }
+        }
 
               function liveContext() {
                 const now = new Date();

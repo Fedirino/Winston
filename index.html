@@ -304,7 +304,7 @@
     <div class="whisper" id="whisper">tap to speak</div>
 
     <div class="foot">
-      <span id="ver-tag">Winston v0.9.0</span>
+      <span id="ver-tag">Winston v0.9.1</span>
       <span id="model-tag"></span>
     </div>
   </main>
@@ -386,7 +386,7 @@
                 .join('\n');
             }
 
-      const APP_VERSION = '0.9.0';
+      const APP_VERSION = '0.9.1';
     const DEFAULT_ELEVEN_VOICE_ID = 'goT3UYdM9bhm0n2lmKQx';
 
         // Read initial persona before state construction to avoid TDZ issues
@@ -1109,9 +1109,13 @@
                   recognition.lang = 'en-US';
 
                   recognition.onresult = (e) => {
-                    for (let i = e.resultIndex; i < e.results.length; i++) {
-                      if (e.results[i].isFinal) micFinalText += e.results[i][0].transcript;
+                    // Rebuild full transcript from ALL final results (not just delta)
+                    // to avoid duplicating fragments -- replace, don't append
+                    let accumulated = '';
+                    for (let i = 0; i < e.results.length; i++) {
+                      if (e.results[i].isFinal) accumulated += e.results[i][0].transcript;
                     }
+                    if (accumulated.trim()) micFinalText = accumulated;
                     // Reset silence timer on any new final speech
                     if (micSilenceTimer) clearTimeout(micSilenceTimer);
                     micSilenceTimer = setTimeout(() => {

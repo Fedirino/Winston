@@ -1,4 +1,11 @@
 # Changelog
+## [0.9.1] - 2026-08-20
+
+### Fixed
+- Speech recognition no longer duplicates word fragments when browser sends partial final results (e.g. "hello hello winston" → "hello winston")
+- Voice transcript now properly rebuilt from all finalized results instead of appending
+
+
 
 ## 0.8.2
 - Added `goT3UYdM9bhm0n2lmKQx` as Winston's built-in ElevenLabs voice while retaining the Settings override.

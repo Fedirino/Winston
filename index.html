@@ -1074,9 +1074,10 @@
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
                 let micFinalText = '';
-                let micSilenceTimer = null;
-                let micSending = false;
-                const MIC_SILENCE_MS = 1500;
+                                let micSilenceTimer = null;
+                                let micSending = false;
+                                let resultsSeen = new Set();
+                                const MIC_SILENCE_MS = 1500;
 
                 function listen() {
                   if (!SpeechRecognition) {
@@ -1100,8 +1101,9 @@
                     recognition = null;
                   }
                   micFinalText = '';
-                  micSending = false;
-                  if (micSilenceTimer) { clearTimeout(micSilenceTimer); micSilenceTimer = null; }
+                                    micSending = false;
+                                    resultsSeen = new Set();
+                                    if (micSilenceTimer) { clearTimeout(micSilenceTimer); micSilenceTimer = null; }
 
                   recognition = new SpeechRecognition();
                   recognition.continuous = true;  // Keep listening through brief pauses
@@ -1109,25 +1111,32 @@
                   recognition.lang = 'en-US';
 
                   recognition.onresult = (e) => {
-                    // Rebuild full transcript from ALL final results (not just delta)
-                    // to avoid duplicating fragments -- replace, don't append
-                    let accumulated = '';
-                    for (let i = 0; i < e.results.length; i++) {
-                      if (e.results[i].isFinal) accumulated += e.results[i][0].transcript;
-                    }
-                    if (accumulated.trim()) micFinalText = accumulated;
-                    // Reset silence timer on any new final speech
-                    if (micSilenceTimer) clearTimeout(micSilenceTimer);
-                    micSilenceTimer = setTimeout(() => {
-                      if (micSending) return;
-                      if (!micFinalText) { micSilenceTimer = null; return; }
-                      micSending = true;
-                      stopListening();
-                      if (micFinalText) handleUser(micFinalText, 'voice');
-                      micFinalText = '';
-                      micSilenceTimer = null;
-                    }, MIC_SILENCE_MS);
-                  };
+                                                        // If we've already stopped listening, ignore late events
+                                                        // (recognition.stop() is async and can fire more results)
+                                                        if (!state.listening) return;
+                                                        // Delta approach: only process NEW final results, skip already-seen indices
+                                                        // This prevents the Chrome bug where re-finalized results get duplicated
+                                                        for (let i = e.resultIndex; i < e.results.length; i++) {
+                                                          if (e.results[i].isFinal && !resultsSeen.has(i)) {
+                                                            resultsSeen.add(i);
+                                                            const text = e.results[i][0].transcript.trim();
+                                                            if (text) {
+                                                              micFinalText += (micFinalText ? ' ' : '') + text;
+                                                            }
+                                                          }
+                                                        }
+                                      // Reset silence timer on any new speech
+                                      if (micSilenceTimer) clearTimeout(micSilenceTimer);
+                                      micSilenceTimer = setTimeout(() => {
+                                        if (micSending) return;
+                                        if (!micFinalText) { micSilenceTimer = null; return; }
+                                        micSending = true;
+                                        stopListening();
+                                        if (micFinalText) handleUser(micFinalText, 'voice');
+                                        micFinalText = '';
+                                        micSilenceTimer = null;
+                                      }, MIC_SILENCE_MS);
+                                    };
                   recognition.onend = () => {
                     state.listening = false;
                     if (micSilenceTimer) { clearTimeout(micSilenceTimer); micSilenceTimer = null; }

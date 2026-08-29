@@ -1,5 +1,5 @@
-const CACHE = 'winston-v0.9.1';
-const ASSETS = ['/', '/index.html', '/manifest.json', '/src/features/capture/capture.js', '/src/services/cloud.js', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png', '/favicon.png'];
+const CACHE = 'winston-v0.9.2';
+const ASSETS = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png', '/favicon.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));
   self.skipWaiting();

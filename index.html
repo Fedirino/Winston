@@ -1071,93 +1071,88 @@
     }
 
     // ---------- speech recognition ----------
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        let recognition = null;
-                let micFinalText = '';
-                                let micSilenceTimer = null;
-                                let micSending = false;
-                                let resultsSeen = new Set();
-                                let micRestartCount = 0;
-                                const MIC_SILENCE_MS = 1500;
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            let recognition = null;
+                    let micFinalText = '';
+                                    let micSilenceTimer = null;
+                                    let micSending = false;
+                                    const MIC_SILENCE_MS = 1500;
 
-                function setupRecognitionHandlers(recog) {
-                  recog.continuous = true;
-                  recog.interimResults = true;
-                  recog.lang = 'en-US';
-
-                  recog.onresult = (e) => {
-                    if (!state.listening) return;
-                    for (let i = e.resultIndex; i < e.results.length; i++) {
-                      if (e.results[i].isFinal && !resultsSeen.has(i)) {
-                        resultsSeen.add(i);
-                        const text = e.results[i][0].transcript.trim();
-                        if (text) {
-                          micFinalText += (micFinalText ? ' ' : '') + text;
-                        }
-                      }
-                    }
-                    if (micSilenceTimer) clearTimeout(micSilenceTimer);
-                    micSilenceTimer = setTimeout(() => {
-                      if (micSending) return;
-                      if (!micFinalText) { micSilenceTimer = null; return; }
-                      micSending = true;
-                      micRestartCount = 0; // reset on successful send
-                      stopListening();
-                      if (micFinalText) handleUser(micFinalText, 'voice');
+                    function flushMicText() {
+                      const t = micFinalText;
                       micFinalText = '';
                       micSilenceTimer = null;
-                    }, MIC_SILENCE_MS);
-                  };
+                      micSending = false;
+                      if (t) handleUser(t, 'voice');
+                    }
 
-                  recog.onend = () => {
-                    state.listening = false;
-                    // Don't send here — let the silence timer handle it.
-                    // Chrome's SpeechRecognition with continuous=true can spontaneously
-                    // end the session mid-sentence. Sending here causes progressive
-                    // partial-text messages like "what's" → "what's the" → ...
-                    if (micSending) {
-                      micFinalText = '';
-                      setMode('idle');
-                      if (state.handsFree) startWakeWord();
-                    } else if (micFinalText && micRestartCount < 3) {
-                                          // Browser ended mid-speech — restart silently to collect more.
-                                                                                    // Reset resultsSeen for the new session — critical on mobile
-                                                                                    // where Android Chrome spontaneously kills continuous sessions
-                                                                                    // and each restart is a fresh session with resultIndex at 0.
-                                                                                    // Without this reset, the new utterance at index 0 is skipped
-                                                                                    // because resultsSeen already "saw" index 0 from the old session.
-                                          micRestartCount++;
-                                          resultsSeen = new Set();
-                                          const newRecog = new SpeechRecognition();
-                      setupRecognitionHandlers(newRecog);
-                      recog.onresult = null; recog.onend = null; recog.onerror = null;
-                      recognition = newRecog;
-                      try { newRecog.start(); state.listening = true; } catch (e) {
-                        recognition = null;
-                        if (micFinalText) handleUser(micFinalText, 'voice');
+                    function setupRecognitionHandlers(recog) {
+                      recog.continuous = true;
+                      recog.interimResults = true;
+                      recog.lang = 'en-US';
+
+                      recog.onresult = (e) => {
+                        if (!state.listening) return;
+                        // Full rebuild from ALL final results — replace, don't append.
+                        // This avoids the resultIndex delta + resultsSeen pattern which
+                        // breaks on Android Chrome where sessions are killed and restarted
+                        // constantly — old result indices get re-processed and appended,
+                        // causing "hello hello hello" duplicates.
+                        let accumulated = '';
+                        for (let i = 0; i < e.results.length; i++) {
+                          if (e.results[i].isFinal) {
+                            const seg = e.results[i][0].transcript.trim();
+                            if (seg) accumulated += (accumulated ? ' ' : '') + seg;
+                          }
+                        }
+                        if (accumulated) micFinalText = accumulated;
+
+                        // Reset silence timer on every new result
+                        if (micSilenceTimer) clearTimeout(micSilenceTimer);
+                        micSilenceTimer = setTimeout(() => {
+                          if (micSending) return;
+                          if (!micFinalText) { micSilenceTimer = null; return; }
+                          micSending = true;
+                          stopListening();
+                          flushMicText();
+                        }, MIC_SILENCE_MS);
+                      };
+
+                      recog.onend = () => {
+                        state.listening = false;
+                        // Don't send here — let the silence timer handle it.
+                        // On desktop, continuous=true keeps the session alive through
+                        // pauses. On Android, the session gets killed constantly, so
+                        // onend fires with whatever we've got — just send it.
+                        if (micSending) {
+                          micFinalText = '';
+                          setMode('idle');
+                          if (state.handsFree) startWakeWord();
+                        } else if (micFinalText) {
+                          // Session died mid-listening (Android) — flush what we have
+                          micSending = true;
+                          flushMicText();
+                          setMode('idle');
+                          if (state.handsFree || state.continuous) {
+                            setTimeout(() => listen(), 400);
+                          } else if (state.handsFree) {
+                            startWakeWord();
+                          }
+                        } else {
+                          setMode('idle');
+                          if (state.handsFree) startWakeWord();
+                        }
+                      };
+
+                      recog.onerror = () => {
+                        state.listening = false;
+                        if (micSilenceTimer) { clearTimeout(micSilenceTimer); micSilenceTimer = null; }
                         micFinalText = '';
+                        micSending = false;
                         setMode('idle');
                         if (state.handsFree) startWakeWord();
-                      }
-                    } else {
-                      // Either no text or hit restart limit — give up and send
-                      if (micFinalText) handleUser(micFinalText, 'voice');
-                      micFinalText = '';
-                      setMode('idle');
-                      if (state.handsFree) startWakeWord();
+                      };
                     }
-                    micSending = false;
-                  };
-
-                  recog.onerror = () => {
-                    state.listening = false;
-                    if (micSilenceTimer) { clearTimeout(micSilenceTimer); micSilenceTimer = null; }
-                    micFinalText = '';
-                    micSending = false;
-                    setMode('idle');
-                    if (state.handsFree) startWakeWord();
-                  };
-                }
 
                 function listen() {
                   if (!SpeechRecognition) {
@@ -1182,9 +1177,7 @@
                   }
                   micFinalText = '';
                                     micSending = false;
-                                    resultsSeen = new Set();
-                                    micRestartCount = 0;
-                                    if (micSilenceTimer) { clearTimeout(micSilenceTimer); micSilenceTimer = null; }
+                                                      if (micSilenceTimer) { clearTimeout(micSilenceTimer); micSilenceTimer = null; }
 
                   recognition = new SpeechRecognition();
                   setupRecognitionHandlers(recognition);

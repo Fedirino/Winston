@@ -1120,9 +1120,15 @@
                       setMode('idle');
                       if (state.handsFree) startWakeWord();
                     } else if (micFinalText && micRestartCount < 3) {
-                      // Browser ended mid-speech — restart silently to collect more
-                      micRestartCount++;
-                      const newRecog = new SpeechRecognition();
+                                          // Browser ended mid-speech — restart silently to collect more.
+                                                                                    // Reset resultsSeen for the new session — critical on mobile
+                                                                                    // where Android Chrome spontaneously kills continuous sessions
+                                                                                    // and each restart is a fresh session with resultIndex at 0.
+                                                                                    // Without this reset, the new utterance at index 0 is skipped
+                                                                                    // because resultsSeen already "saw" index 0 from the old session.
+                                          micRestartCount++;
+                                          resultsSeen = new Set();
+                                          const newRecog = new SpeechRecognition();
                       setupRecognitionHandlers(newRecog);
                       recog.onresult = null; recog.onend = null; recog.onerror = null;
                       recognition = newRecog;
